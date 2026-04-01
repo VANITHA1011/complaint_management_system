@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Municipality Dashboard (L2) - CIVIX</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="/css/theme.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body { background: var(--bg-body, #f8fafc); color: var(--text-primary, #1e293b); font-family: "Segoe UI", sans-serif; }
+.stats-card { background: #fff; border-radius: 14px; padding: 22px; text-align: center; box-shadow: 0 6px 18px rgba(0,0,0,0.08); transition: transform 0.3s; }
+.stats-card:hover { transform: translateY(-4px); }
+.table-card { background: #fff; border-radius: 14px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+.dot-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.dot-badge .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.level-tag { background: #eab308; color: #111827; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+.action-btn { font-size: 12px; padding: 4px 10px; border-radius: 6px; font-weight: 600; border: none; cursor: pointer; }
+.btn-resolve { background: #16a34a; color: #fff; }
+.btn-resolve:hover { background: #15803d; }
+.btn-escalate { background: #dc2626; color: #fff; }
+.btn-escalate:hover { background: #b91c1c; }
+.empty-state { text-align: center; padding: 40px; color: #9ca3af; }
+.sla-ok { color: #15803d; font-weight: 600; }
+.sla-warn { color: #b45309; font-weight: 700; }
+.sla-danger { color: #b91c1c; font-weight: 700; }
+.sla-bar-wrap { width: 90px; height: 6px; background: #e2e8f0; border-radius: 4px; margin: 4px 0 2px; }
+.sla-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+.badge-reward { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.badge-penalty { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.badge-critical { background: #1e293b; color: #f87171; border: 1px solid #dc2626; border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+tr.row-warn { background: #fffbeb !important; }
+tr.row-danger { background: #fef2f2 !important; }
+#civix-toast-container { position: fixed; top: 80px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.civix-toast { background: #1e293b; color: #f8fafc; padding: 13px 18px; border-radius: 12px; font-size: 0.88rem; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.18); display: flex; align-items: center; gap: 10px; min-width: 280px; max-width: 360px; pointer-events: auto; animation: toast-in 0.3s ease; }
+.civix-toast.toast-success { border-left: 4px solid #22c55e; }
+.civix-toast.toast-warning { border-left: 4px solid #f59e0b; }
+.civix-toast.toast-info    { border-left: 4px solid #3b82f6; }
+.civix-toast.toast-out { animation: toast-out 0.3s ease forwards; }
+@keyframes toast-in  { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+@keyframes toast-out { from { opacity:1; transform:translateX(0); } to { opacity:0; transform:translateX(40px); } }
+.history-card { background: #fff; border-radius: 14px; padding: 20px 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); margin-top: 20px; }
+.history-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+.history-item:last-child { border-bottom: none; }
+.history-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.history-text { font-size: 0.88rem; color: #374151; line-height: 1.4; }
+.history-time { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
+.btn-loading { opacity: 0.7; pointer-events: none; }
+.btn-loading i { display: none; }
+.btn-loading::before { content: ''; display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#last-updated { font-size: 11px; color: #94a3b8; }
+</style>
+</head>
+<body>
+
+<!-- Role-based Access Control -->
+<script>
+function doLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+        localStorage.removeItem("currentUser");
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        localStorage.removeItem("civix_page");
+        localStorage.removeItem("currentRoleName");
+        localStorage.removeItem("currentEmail");
+        sessionStorage.clear();
+        fetch('/api/logout/', { method: 'POST', credentials: 'include' }).finally(() => {
+            window.location.href = '/index.html?page=login';
+        });
+    }
+}
+</script>
+
+<div id="civix-toast-container"></div>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-warning shadow">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="#"><i class="fas fa-city me-2"></i>CIVIX - Municipality Dashboard (L2)</a>
+    <div class="ms-auto d-flex align-items-center gap-4">
+      <span class="badge bg-white text-dark rounded-pill px-3 py-2 shadow-sm small fw-bold">M-LEVEL</span>
+      <a class="nav-link text-white fw-semibold d-flex align-items-center gap-2" href="/authority-profile.html">
+        <div class="bg-white text-warning rounded-circle d-flex align-items-center justify-content-center" style="width:32px; height:32px;">
+          <i class="fas fa-user"></i>
+        </div>
+        Profile
+      </a>
+      <a class="nav-link text-white d-flex align-items-center gap-1" href="#" onclick="doLogout()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </a>
+      <a class="nav-link text-white ms-2" href="#" onclick="toggleTheme()" id="themeToggleBtn" title="Toggle Light/Dark Mode">
+        <i class="fas fa-moon"></i>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h3 class="fw-bold">Municipality Officer - Complaint Management</h3>
+  <p class="text-muted mb-4">Complaints escalated from Ward or assigned at Municipality level. Resolve or escalate to District.</p>
+
+  <!-- Analytics Section (Premium Feature) -->
+  <div class="row mb-5 g-4 fade-in">
+    <div class="col-md-6">
+      <div class="bg-white p-4 rounded-4 shadow-sm border border-light h-100">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h6 class="fw-bold text-muted text-uppercase small mb-0"><i class="fas fa-bolt me-2 text-warning"></i>Resolution Velocity</h6>
+          <i class="fas fa-info-circle text-muted" title="How quickly complaints are resolved relative to SLA"></i>
+        </div>
+        <div style="height: 220px;">
+          <canvas id="velocityChart"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="bg-white p-4 rounded-4 shadow-sm border border-light h-100">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h6 class="fw-bold text-muted text-uppercase small mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Status Distribution</h6>
+        </div>
+        <div style="height: 220px;">
+          <canvas id="statusChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="publicAlerts" style="display: none;"></div>
+
+  <div class="row g-3 mb-4">
+    <div class="col"><div class="stats-card"><i class="fas fa-file-alt text-primary fa-lg mb-2 d-block"></i><h6>Total</h6><h3 id="s-total">--</h3></div></div>
+    <div class="col"><div class="stats-card"><i class="fas fa-clock text-warning fa-lg mb-2 d-block"></i><h6>Pending</h6><h3 id="s-pending" class="text-warning">--</h3></div></div>
+    <div class="col"><div class="stats-card"><i class="fas fa-check-circle text-success fa-lg mb-2 d-block"></i><h6>Resolved</h6><h3 id="s-resolved" class="text-success">--</h3></div></div>
+    <div class="col"><div class="stats-card"><i class="fas fa-arrow-up text-danger fa-lg mb-2 d-block"></i><h6>Escalated</h6><h3 id="s-escalated" class="text-danger">--</h3></div></div>
+  </div>
+
+  <div class="table-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0"><i class="fas fa-list me-2"></i>Complaints at Municipality Level</h5>
+      <div class="d-flex align-items-center gap-2">
+        <span id="last-updated"></span>
+        <button class="btn btn-sm btn-outline-warning" onclick="renderTable()"><i class="fas fa-sync-alt me-1"></i>Refresh</button>
+      </div>
+    </div>
+
+<!-- Resolution Modal -->
+<div class="modal fade" id="resolveModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">Resolve Complaint</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="resolveForm">
+          <input type="hidden" id="res-complaint-id">
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Complaint ID</label>
+            <input type="text" class="form-control" id="res-display-id" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Officer Name</label>
+            <input type="text" class="form-control" id="res-officer-name" required placeholder="Enter your full name">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Officer ID</label>
+            <input type="text" class="form-control" id="res-officer-id" required placeholder="Enter your official ID">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Resolution Proof (Image)</label>
+            <input type="file" class="form-control" id="res-proof-file" accept="image/*" required>
+            <div class="form-text">Please upload a photo showing the resolved issue.</div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" onclick="submitResolveForm()">Submit Resolution</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Escalation Modal -->
+<div class="modal fade" id="escalateModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Escalate Complaint</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="escalateForm">
+          <input type="hidden" id="esc-complaint-id">
+          <div class="mb-3">
+            <label class="form-label">Reason for Escalation</label>
+            <textarea class="form-control" id="esc-reason" rows="3" required placeholder="Reason for escalating to District (min 10 characters)"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" onclick="submitEscalateForm()">Escalate to District</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- View Details Modal -->
+<div class="modal fade" id="viewDetailsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>Complaint #<span id="vd-id"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-4">
+          <div class="col-md-6">
+            <h6 class="fw-bold mb-3 border-bottom pb-2 text-warning">Submitted By</h6>
+            <p class="mb-1"><span class="text-muted small">Name:</span> <strong id="vd-user-name"></strong></p>
+            <h6 class="fw-bold mt-4 mb-3 border-bottom pb-2 text-warning">Location</h6>
+            <p class="mb-1"><span class="text-muted small">District:</span> <strong id="vd-district"></strong></p>
+            <p class="mb-1"><span class="text-muted small">Ward/Area:</span> <strong id="vd-area"></strong></p>
+          </div>
+          <div class="col-md-6">
+            <h6 class="fw-bold mb-3 border-bottom pb-2 text-warning">Complaint Details</h6>
+            <p class="mb-1"><span class="text-muted small">Title:</span> <strong id="vd-title"></strong></p>
+            <p class="mb-2"><span class="text-muted small">Description:</span></p>
+            <p id="vd-description" class="p-2 border rounded bg-light" style="font-size:0.88rem;min-height:60px;"></p>
+            <h6 class="fw-bold mt-4 mb-3 border-bottom pb-2 text-warning">Status</h6>
+            <div id="vd-status-badge"></div>
+            <p class="mt-2" id="vd-sla-text"></p>
+          </div>
+          <div class="col-12" id="vd-esc-container" style="display:none;">
+            <div class="alert alert-danger border-0 shadow-sm">
+              <h6 class="fw-bold mb-2 small text-uppercase"><i class="fas fa-arrow-up me-1"></i>Escalated By Previous Officer</h6>
+              <p class="mb-1 small"><strong>Officer:</strong> <span id="vd-esc-officer"></span></p>
+              <p class="mb-0 small"><strong>Reason:</strong> <span id="vd-esc-reason"></span></p>
+            </div>
+          </div>
+          <div class="col-12" id="vd-proof-container" style="display:none;">
+            <h6 class="fw-bold mb-3 border-bottom pb-2 text-warning">Proof</h6>
+            <div class="text-center p-2 border rounded bg-light">
+              <img id="vd-proof-img" src="" style="max-width:100%;max-height:400px;cursor:pointer;" onclick="window.open(this.src,'_blank')">
+              <p class="mt-2 text-muted small"><i class="fas fa-external-link-alt me-1"></i>Click to view full size</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" id="vd-actions"></div>
+    </div>
+  </div>
+</div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr><th>ID</th><th>Title</th><th>Category</th><th>Priority</th><th>Status</th><th style="width:140px;">SLA Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="complaint-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="history-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0"><i class="fas fa-history me-2 text-muted"></i>Recent Actions</h5>
+    </div>
+    <div id="history-list"><div class="text-muted small">No recent actions.</div></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const LEVEL = 2;
+const ROLE_NAME = "Municipality Officer";
+const NEXT_ROLE = "District Authority";
+const LEVEL_NAME = "municipality";
+const API = "http://127.0.0.1:8000/api/complaints";
+let SLA_TIME = 60000;
+
+async function fetchLevelComplaints() {
+    try {
+        const res = await fetch(`${API}/list/?level=${LEVEL_NAME}`);
+        const json = await res.json();
+        if (json.success && json.sla_ms) {
+            SLA_TIME = json.sla_ms;
+        }
+        return json.success ? json.complaints : [];
+    } catch(_) { return []; }
+}
+async function apiResolve(dbId, reason) {
+    const res = await fetch(`${API}/${dbId}/resolve/`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({reason: reason||'Resolved by '+ROLE_NAME}) }); return res.json();
+}
+async function apiEscalate(dbId, reason) {
+    const res = await fetch(`${API}/${dbId}/escalate/`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({reason}) }); return res.json();
+}
+function normalize(c) {
+    // Use level_started_at (per-level fresh timer) if available; fallback to created_at
+    const levelStart = c.level_started_at
+        ? new Date(c.level_started_at).getTime()
+        : new Date(c.created_at).getTime();
+    return { 
+        id:'CMP'+String(c.id).padStart(3,'0'), 
+        _dbId:c.id, 
+        title:c.title||c.description||'--', 
+        area: c.area || '--',
+        imageProof: c.image_proof || null,
+        proof: c.resolution_proof || null,
+        category:c.category||'--', 
+        priority:c.priority||'low', 
+        status: (function(){ const raw = c.status.charAt(0).toUpperCase()+c.status.slice(1); return (!c.is_active_at_level && raw === 'Pending') ? 'Escalated' : raw; })(),
+        currentLevel:LEVEL, 
+        level:LEVEL, 
+        createdAt:new Date(c.created_at).getTime(), 
+        // Use per-level SLA timer (resets on escalation)
+        levelStartedAt: levelStart, 
+        escalationCount:0, 
+        escalationLog:[], 
+        isEditable:c.is_editable, 
+        isActiveHere:c.is_active_at_level,
+        citizenAccepted: c.citizen_accepted,
+        escalationReason: c.escalation_reason || null,
+        escalatingOfficer: c.escalating_officer || null,
+        resolutionOfficer: c.resolution_officer || null,
+        description: c.description || '',
+        district: c.district || '--',
+        citizenName: c.citizen_name || '--',
+        currentLevelBackend: c.current_level,
+    };
+}
+let _complaints = [];
+function load() { return _complaints; }
+function save() {}
+
+function showToast(msg, type = 'success') {
+  const container = document.getElementById('civix-toast-container');
+  const icons = { success: '', warning: '', info: '' };
+  const t = document.createElement('div');
+  t.className = `civix-toast toast-${type}`;
+  t.innerHTML = `<span>${icons[type] || ''}</span><span>${msg}</span>`;
+  container.appendChild(t);
+  setTimeout(() => { t.classList.add('toast-out'); setTimeout(() => t.remove(), 320); }, 3500);
+}
+
+function setLoading(btn, loading) {
+  if (!btn) return;
+  if (loading) btn.classList.add('btn-loading');
+  else btn.classList.remove('btn-loading');
+}
+
+function updateTimestamp() {
+  const el = document.getElementById('last-updated');
+  if (el) el.textContent = 'Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function renderHistory() {
+  const list = load();
+  const logs = [];
+  list.forEach(c => {
+    if (!c.escalationLog) return;
+    c.escalationLog.forEach(e => {
+      // Skip invalid entries
+      if (!e || (!e.action && !e.by)) return;
+      
+      // FILTER BY LEVEL: Show only activities relevant to current dashboard level
+      const activityLevel = e.level || c.currentLevel || c.level || 1;
+      if (activityLevel !== LEVEL) return; // Only show activities for this level
+      
+      // Clean data with fallbacks
+      const cleanEntry = {
+        action: e.action || 'Updated',
+        by: e.by || 'System',
+        time: e.time || new Date().toISOString(),
+        complaintId: c.id,
+        title: c.title,
+        level: activityLevel
+      };
+      logs.push(cleanEntry);
+    });
+  });
+  logs.sort((a, b) => new Date(b.time) - new Date(a.time));
+  const recent = logs.slice(0, 6);
+  const el = document.getElementById('history-list');
+  if (!el) return;
+  if (!recent.length) { 
+    el.innerHTML = `<div class="text-muted small">No recent activity at ${ROLE_NAME} level</div>`; 
+    return; 
+  }
+  const dotColor = { Resolved: '#22c55e', Escalated: '#ef4444', 'Auto-Escalated (SLA Breach)': '#f59e0b' };
+  el.innerHTML = recent.map(e => {
+    const color = dotColor[e.action] || '#3b82f6';
+    const t = new Date(e.time).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return `<div class="history-item">
+      <div class="history-dot" style="background:${color};"></div>
+      <div>
+        <div class="history-text"><strong>${e.complaintId}</strong> - ${e.action} by <strong>${e.by}</strong></div>
+        <div class="history-time">${t}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function ensureLevelStarted(c) {
+  if (!c.levelStartedAt) c.levelStartedAt = c.createdAt || Date.now();
+}
+
+function accountabilityCell(c) {
+  const parts = [];
+  
+  // If resolved, only show reward badge
+  if (c.status === 'Resolved') {
+    if (c.reward) parts.push(`<span class="badge-reward">${c.reward}</span>`);
+    return parts.length ? parts.join('<br>') : '<span class="text-muted small">--</span>';
+  }
+  
+  // Only show warnings for pending/non-resolved complaints
+  const esc = c.escalationCount || 0;
+  if (c.level === 4 && c.status !== 'Resolved') parts.push(`<span class="badge-critical">Critical Failure</span>`);
+  else if (esc >= 3) parts.push(`<span class="badge-penalty">Performance Drop (${esc} esc.)</span>`);
+  else if (esc >= 1) parts.push(`<span class="badge-penalty">Warning (${esc} esc.)</span>`);
+  if (c.reward) parts.push(`<span class="badge-reward">${c.reward}</span>`);
+  return parts.length ? parts.join('<br>') : '<span class="text-muted small">--</span>';
+}
+
+function priorityBadge(p) {
+  const m = { high: ['#ef4444','#fef2f2','#b91c1c'], medium: ['#f59e0b','#fffbeb','#92400e'], low: ['#22c55e','#f0fdf4','#15803d'] };
+  const [dot, bg, color] = m[p] || ['#6b7280','#f3f4f6','#374151'];
+  return `<span class="dot-badge" style="background:${bg};color:${color};border:1px solid ${dot}44"><span class="dot" style="background:${dot}"></span>${p}</span>`;
+}
+
+function statusBadge(s, accepted = true) {
+  const m = { 'Pending':['#f59e0b','#fffbeb','#92400e'], 'In Progress':['#3b82f6','#eff6ff','#1d4ed8'], 'Resolved':['#22c55e','#f0fdf4','#15803d'], 'Escalated':['#ef4444','#fef2f2','#b91c1c'] };
+  if ((s||'').toLowerCase() === 'resolved' && !accepted) {
+    return `<span class="dot-badge" style="background:#fffbeb;color:#92400e;border:1px solid #f59e0b44"><span class="dot" style="background:#f59e0b"></span>Awaiting Approval</span>`;
+  }
+  const [dot, bg, color] = m[s] || ['#6b7280','#f3f4f6','#374151'];
+  return `<span class="dot-badge" style="background:${bg};color:${color};border:1px solid ${dot}44"><span class="dot" style="background:${dot}"></span>${s}</span>`;
+}
+
+function getVisibleComplaints(level) { return _complaints; }
+
+// Ward-style SLA status (matches ward dashboard exactly)
+function getEscalatedToLabel(complaint) {
+  const lvl = complaint.currentLevelBackend || '';
+  if (lvl === 'district') return 'Escalated to District';
+  if (lvl === 'state') return 'Escalated to State';
+  return 'Escalated';
+}
+
+function getSLAStatus(complaint) {
+  if (complaint.status === 'Resolved') {
+    return { status: 'resolved', text: '\u2714 Resolved', class: 'sla-ok', icon: '\ud83d\udfe2', remaining: 0 };
+  }
+  // Not at this level: frozen label
+  if (!complaint.isActiveHere) {
+    const label = getEscalatedToLabel(complaint);
+    return { status: 'done', text: label, class: 'sla-danger', icon: '\u2b06\ufe0f', remaining: 0 };
+  }
+  const elapsed = Date.now() - complaint.levelStartedAt;
+  const remaining = SLA_TIME - elapsed;
+  if (remaining <= 0) {
+    return { status: 'breached', text: '\ud83d\udea8 Escalated to District', class: 'sla-danger', icon: '\ud83d\udea8', remaining: 0 };
+  } else if (remaining <= SLA_TIME * 0.3) {
+    return { status: 'warning', text: '\u26a0\ufe0f Almost Escalating', class: 'sla-warn', icon: '\u26a0\ufe0f', remaining };
+  }
+  return { status: 'safe', text: '\ud83d\udfe2 Within Time', class: 'sla-ok', icon: '\ud83d\udfe2', remaining };
+}
+
+function formatTime(ms) {
+  const seconds = Math.ceil(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`;
+}
+
+function renderTable() {
+    fetchLevelComplaints().then(raw => { 
+        _complaints = raw.map(normalize); 
+        _renderTableUI(_complaints); 
+        
+        // Also fetch ALL for public alerts
+        fetch(`${API}/list/?level=all`).then(r => r.json()).then(json => {
+            if (json.success) renderPublicAlerts(json.complaints);
+        });
+    });
+}
+
+function _renderTableUI(mine) {
+  const tbody = document.getElementById('complaint-tbody');
+  document.getElementById('s-total').textContent = mine.length;
+  document.getElementById('s-pending').textContent = mine.filter(c => c.status === 'Pending').length;
+  document.getElementById('s-resolved').textContent = mine.filter(c => c.status === 'Resolved').length;
+  document.getElementById('s-escalated').textContent = mine.filter(c => c.status === 'Escalated').length;
+  updateTimestamp();
+  renderHistory();
+  if (!mine.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>No complaints at Municipality level.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = mine.map(c => {
+    const slaStatus = getSLAStatus(c);
+    const rowCls = slaStatus.status === 'escalated' ? 'row-danger' : slaStatus.status === 'warning' ? 'row-warn' : '';
+    let actionHtml = '';
+    if (c.isActiveHere && c.status !== 'Resolved') {
+      actionHtml = `<button class="action-btn" style="background:#3b82f6; color:#fff; width:100%;" onclick="openViewDetailsModal('${c._dbId || c.id}')"><i class="fas fa-eye me-1"></i>View Details</button>`;
+    } else {
+      actionHtml = `<button class="action-btn" style="background:#64748b; color:#fff; width:100%;" onclick="openViewDetailsModal('${c._dbId || c.id}')"><i class="fas fa-eye me-1"></i>View Details</button>`;
+    }
+    return `<tr class="${rowCls}" id="row-${c.id}">
+      <td class="fw-semibold text-warning">${c.id}</td>
+      <td>${c.title}${c.escalatingOfficer ? `<br><small class="text-danger">⬆ Escalated by: ${c.escalatingOfficer}</small>` : ''}</td>
+      <td><span class="badge bg-secondary">${c.category}</span></td>
+      <td>${priorityBadge(c.priority)}</td>
+      <td>${statusBadge(c.status, c.citizenAccepted)}</td>
+      <td id="sla-cell-${c._dbId}">
+        <span class="${slaStatus.class}">
+          ${slaStatus.icon} ${slaStatus.text}
+          ${slaStatus.remaining > 0 ? `<br><small>${formatTime(slaStatus.remaining)} left</small>` : ''}
+        </span>
+      </td>
+      <td>
+        <div class="d-flex flex-column gap-1">
+          ${actionHtml}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+
+
+function openResolveModal(id) {
+  const c = _complaints.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('res-complaint-id').value = id;
+  document.getElementById('res-display-id').value = id;
+  document.getElementById('res-officer-name').value = localStorage.getItem('currentRoleName') || '';
+  new bootstrap.Modal(document.getElementById('resolveModal')).show();
+}
+
+function submitResolveForm() {
+  const id = document.getElementById('res-complaint-id').value;
+  const officerName = document.getElementById('res-officer-name').value;
+  const officerId = document.getElementById('res-officer-id').value;
+  const proofFile = document.getElementById('res-proof-file').files[0];
+  if (!officerName || !officerId || !proofFile) { showToast('All fields and proof photo are required', 'warning'); return; }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const proofData = e.target.result;
+    const c = _complaints.find(x => x.id === id);
+    fetch(`${API}/${c._dbId}/resolve/`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ officer_name: officerName, officer_id: officerId, proof: proofData })
+    }).then(r => r.json()).then(json => {
+      if (json.success) {
+        bootstrap.Modal.getInstance(document.getElementById('resolveModal')).hide();
+        showToast('Resolution submitted! Awaiting citizen approval.', 'success');
+        renderTable();
+      } else showToast(json.error || 'Could not resolve', 'warning');
+    });
+  };
+  reader.readAsDataURL(proofFile);
+}
+
+function openEscalateModal(id) {
+  document.getElementById('esc-complaint-id').value = id;
+  new bootstrap.Modal(document.getElementById('escalateModal')).show();
+}
+
+function submitEscalateForm() {
+  const id = document.getElementById('esc-complaint-id').value;
+  const reason = document.getElementById('esc-reason').value;
+  if (!reason || reason.length < 10) { showToast('Please provide a detailed reason (min 10 chars)', 'warning'); return; }
+
+  const c = _complaints.find(x => x.id === id);
+  fetch(`${API}/${c._dbId}/escalate/`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ 
+      reason: reason,
+      officer_name: localStorage.getItem('currentRoleName') || ROLE_NAME
+    })
+  }).then(r => r.json()).then(json => {
+    if (json.success) {
+      bootstrap.Modal.getInstance(document.getElementById('escalateModal')).hide();
+      showToast(`Complaint escalated to District`, 'warning');
+      renderTable();
+    } else showToast(json.error || 'Could not escalate', 'warning');
+  });
+}
+
+function renderPublicAlerts(all) {
+    const alertContainer = document.getElementById('publicAlerts');
+    if (!alertContainer) return;
+    // Find state-level complaints that breached SLA
+    const slaBreached = all.filter(c => {
+        if (c.current_level !== 'state') return false;
+        if (c.status && c.status.toLowerCase() === 'resolved') return false;
+        const startMs = c.level_started_at
+            ? new Date(c.level_started_at).getTime()
+            : new Date(c.created_at).getTime();
+        return (Date.now() - startMs) >= SLA_TIME;
+    });
+    const unresolved = all.filter(c => c.current_level === 'state' && c.status.toLowerCase() !== 'resolved');
+    if (slaBreached.length > 0) {
+        alertContainer.innerHTML = `<div class="alert alert-danger shadow border-0 rounded-4 p-3 mb-4" style="border-left: 8px solid #dc3545 !important;">
+            <strong>🚨 CRITICAL: ${slaBreached.length} complaint(s) NOT SOLVED within time at State level!</strong><br>
+            <span class="small">All authority dashboards have been notified. Immediate action required.</span>
+        </div>`;
+        alertContainer.style.display = 'block';
+    } else if (unresolved.length > 0) {
+        alertContainer.innerHTML = `<div class="alert alert-warning shadow border-0 rounded-4 p-3 mb-4" style="border-left: 8px solid #f59e0b !important;">
+            <strong>⚠️ ${unresolved.length} unresolved complaint(s) currently at State level.</strong> Timer is running.
+        </div>`;
+        alertContainer.style.display = 'block';
+    } else {
+        alertContainer.style.display = 'none';
+    }
+}
+
+function openViewDetailsModal(id) {
+  const c = _complaints.find(x => x.id === id || String(x._dbId) === String(id));
+  if (!c) { showToast('Complaint not found', 'warning'); return; }
+
+  document.getElementById('vd-id').textContent = c.id;
+  document.getElementById('vd-user-name').textContent = c.citizenName || '--';
+  document.getElementById('vd-district').textContent = c.district || '--';
+  document.getElementById('vd-area').textContent = c.area || '--';
+  document.getElementById('vd-title').textContent = c.title;
+  document.getElementById('vd-description').textContent = c.description || '--';
+
+  // Status badge
+  document.getElementById('vd-status-badge').innerHTML = statusBadge(c.status, c.citizenAccepted);
+
+  // SLA text
+  const slaStatus = getSLAStatus(c);
+  const slaEl = document.getElementById('vd-sla-text');
+  slaEl.className = slaStatus.class + ' small fw-bold';
+  slaEl.innerHTML = `${slaStatus.icon} ${slaStatus.text}${slaStatus.remaining > 0 ? ` (${formatTime(slaStatus.remaining)} remaining)` : ''}`;
+
+  // Escalation info — show proper level name in chain
+  const escContainer = document.getElementById('vd-esc-container');
+  const escOfficer = c.escalatingOfficer || c.escalating_officer;
+  const escReason = c.escalationReason || c.escalation_reason;
+  const levelNames = { ward: 'Ward Officer', municipality: 'Municipality Officer', district: 'District Collector', state: 'State Authority' };
+  // Derive from_level from escalation reason or default to previous level
+  const officerDisplay = (escOfficer && escOfficer !== 'Officer') ? escOfficer : 'Ward Officer';
+  if (escOfficer || escReason) {
+    document.getElementById('vd-esc-officer').textContent = officerDisplay;
+    document.getElementById('vd-esc-reason').textContent = escReason || '--';
+    escContainer.style.display = 'block';
+  } else {
+    escContainer.style.display = 'none';
+  }
+
+  // Proof image (original first, resolution second)
+  const proofContainer = document.getElementById('vd-proof-container');
+  const proofImg = document.getElementById('vd-proof-img');
+  // Lazy-load images on demand\r\n  proofContainer.style.display = 'none';\r\n  if (c.has_image_proof || c.imageProof) {\r\n    fetch("http://127.0.0.1:8000/api/complaints/images/")\r\n      .then(r => r.json()).then(data => {\r\n        if (data.image_proof) { proofImg.src = data.image_proof; proofContainer.style.display = 'block'; }\r\n      }).catch(() => {});\r\n  }
+
+  // Action buttons
+  const actionsDiv = document.getElementById('vd-actions');
+  actionsDiv.innerHTML = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>';
+  if (c.isActiveHere && c.status !== 'Resolved') {
+    actionsDiv.innerHTML += `
+      <button type="button" class="btn btn-danger" onclick="bootstrap.Modal.getInstance(document.getElementById('viewDetailsModal')).hide(); openEscalateModal('${c.id}')">Escalate</button>
+      <button type="button" class="btn btn-success" onclick="bootstrap.Modal.getInstance(document.getElementById('viewDetailsModal')).hide(); openResolveModal('${c.id}')">Resolve</button>
+    `;
+  }
+
+  new bootstrap.Modal(document.getElementById('viewDetailsModal')).show();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('nav-role-name');
+  const em = document.getElementById('nav-email');
+  if (el) el.textContent = localStorage.getItem('currentRoleName') || 'Municipality Officer';
+  if (em) em.textContent = localStorage.getItem('currentEmail') || '';
+  renderTable();
+  setInterval(() => renderTable(), 30000);
+
+  // Live 1-second SLA countdown — only for complaints CURRENTLY at this level
+  setInterval(() => {
+    if (!_complaints || !_complaints.length) return;
+    _complaints.forEach(c => {
+      const cell = document.getElementById('sla-cell-' + c._dbId);
+      if (!cell || c.status === 'Resolved') return;
+      // Past complaints: frozen label
+      if (!c.isActiveHere) {
+        cell.innerHTML = `<span class="sla-danger">\u2b06\ufe0f ${getEscalatedToLabel(c)}</span>`;
+        const row = document.getElementById('row-' + c.id);
+        if (row) { row.classList.add('row-danger'); row.classList.remove('row-warn'); }
+        return;
+      }
+      const elapsed = Date.now() - c.levelStartedAt;
+      const remaining = SLA_TIME - elapsed;
+      const row = document.getElementById('row-' + c.id);
+      if (remaining <= 0) {
+        cell.innerHTML = '<span class="sla-danger">\ud83d\udea8 Escalating...</span>';
+        if (row) { row.classList.add('row-danger'); row.classList.remove('row-warn'); }
+        
+        if (!c._autoEscalated) {
+           c._autoEscalated = true;
+           fetch(`${API}/${c._dbId}/escalate/`, {
+             method: 'POST',
+             headers: {'Content-Type':'application/json'},
+             body: JSON.stringify({ reason: `Auto-escalated: SLA of ${Math.round(SLA_TIME/60000)} minutes exceeded at Municipality level.`, officer_name: 'Municipality Officer (Auto)' })
+           }).finally(() => {
+             setTimeout(() => renderTable(), 1000);
+           });
+        }
+      } else {
+        const pct = remaining / SLA_TIME;
+        let cls, icon;
+        if (pct <= 0.3) { cls = 'sla-danger'; icon = '\ud83d\udea8'; if (row) { row.classList.add('row-danger'); row.classList.remove('row-warn'); } }
+        else if (pct <= 0.7) { cls = 'sla-warn'; icon = '\u26a0\ufe0f'; if (row) { row.classList.add('row-warn'); row.classList.remove('row-danger'); } }
+        else { cls = 'sla-ok'; icon = '\ud83d\udfe2'; if (row) row.classList.remove('row-warn', 'row-danger'); }
+        const secs = Math.ceil(remaining / 1000);
+        const m = Math.floor(secs / 60), s = secs % 60;
+        const timeStr = m > 0 ? `${m}m ${s}s` : `${s}s`;
+
+        // Premium Circular Indicator
+        const radius = 18;
+        const circum = 2 * Math.PI * radius;
+        const offset = circum - (pct * circum);
+
+        cell.innerHTML = `
+          <div class="progress-container d-flex align-items-center gap-2">
+            <svg width="42" height="42">
+              <circle stroke="var(--border-color)" stroke-width="3" fill="transparent" r="${radius}" cx="21" cy="21"/>
+              <circle class="progress-ring" stroke="${cls === 'sla-danger' ? 'var(--danger)' : (cls === 'sla-warn' ? 'var(--warning)' : 'var(--success)')}" 
+                      stroke-width="3" stroke-dasharray="${circum} ${circum}" style="stroke-dashoffset: ${offset}" 
+                      fill="transparent" r="${radius}" cx="21" cy="21"/>
+            </svg>
+            <span class="${cls} small fw-bold">${timeStr}</span>
+          </div>
+        `;
+      }
+    });
+  }, 1000);
+});
+</script>
+<script src="/js/dashboard-charts.js"></script>
+<script src="/js/theme.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    initDashboardCharts('velocityChart', 'statusChart');
+  });
+</script>
+</body>
+</html>

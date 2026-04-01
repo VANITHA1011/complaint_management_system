@@ -1,0 +1,503 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>State Dashboard (L4) - CIVIX</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' %}" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/theme.css' %}" rel="stylesheet">
+<style>
+body{background:var(--bg-body,#f8fafc);color:var(--text-primary,#1e293b);font-family:"Segoe UI",sans-serif;}
+.stats-card{background:#fff;border-radius:14px;padding:22px;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,0.08);transition:transform 0.3s;}
+.stats-card:hover{transform:translateY(-4px);}
+.table-card{background:#fff;border-radius:14px;padding:24px;box-shadow:0 8px 20px rgba(0,0,0,0.08);}
+.dot-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:20px;font-size:12px;font-weight:600;}
+.dot-badge .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.level-tag{background:#dc2626;color:#fff;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
+.action-btn{font-size:12px;padding:4px 10px;border-radius:6px;font-weight:600;border:none;cursor:pointer;}
+.btn-resolve{background:#16a34a;color:#fff;}
+.btn-resolve:hover{background:#15803d;}
+.empty-state{text-align:center;padding:40px;color:#9ca3af;}
+.elog{font-size:11px;color:#6b7280;line-height:1.6;}
+.sla-ok{color:#15803d;font-weight:600;}
+.sla-warn{color:#b45309;font-weight:700;}
+.sla-danger{color:#b91c1c;font-weight:700;}
+.sla-bar-wrap{width:90px;height:6px;background:#e2e8f0;border-radius:4px;margin:4px 0 2px;}
+</style>
+</head>
+<body>
+
+<!-- Role-based Access Control -->
+<script>
+function doLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+        localStorage.clear();
+        window.location.href = '/';
+    }
+}
+</script>
+
+<div id="civix-toast-container"></div>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="#"><i class="fas fa-gavel me-2"></i>CIVIX – State Dashboard (L4)</a>
+    <div class="ms-auto d-flex align-items-center gap-3">
+      <span class="level-tag">STATE LEVEL</span>
+      <a class="nav-link text-white" href="/authority-profile/"><i class="fas fa-user-circle me-1"></i>Profile</a>
+      <div class="d-flex flex-column align-items-end me-1">
+        <span class="text-white fw-semibold" style="font-size:12px;line-height:1.2;" id="nav-role-name"></span>
+        <span class="text-white-50" style="font-size:11px;line-height:1.2;" id="nav-email"></span>
+      </div>
+      <a class="nav-link text-white" href="#" onclick="doLogout()"><i class="fas fa-sign-out-alt me-1"></i>Logout</a>
+      <li class="nav-item list-unstyled">
+        <a class="nav-link text-white" href="#" onclick="toggleTheme()" id="themeToggleBtn" title="Toggle Light/Dark Mode">
+          <i class="fas fa-moon"></i>
+        </a>
+      </li>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h3 class="fw-bold">State Authority – Complaint Management</h3>
+  <p class="text-muted mb-4">Final escalation level. All critical complaints from District level are handled here.</p>
+
+  <div id="publicAlerts" style="display: none;"></div>
+
+  <div class="row g-3 mb-4">
+    <div class="col"><div class="stats-card"><i class="fas fa-file-alt text-primary fa-lg mb-2 d-block"></i><h6>Total</h6><h3 id="s-total">—</h3></div></div>
+    <div class="col"><div class="stats-card"><i class="fas fa-clock text-warning fa-lg mb-2 d-block"></i><h6>Pending</h6><h3 id="s-pending" class="text-warning">—</h3></div></div>
+    <div class="col"><div class="stats-card"><i class="fas fa-check-circle text-success fa-lg mb-2 d-block"></i><h6>Resolved</h6><h3 id="s-resolved" class="text-success">—</h3></div></div>
+    <div class="col"><div class="stats-card"><i class="fas fa-arrow-up text-danger fa-lg mb-2 d-block"></i><h6>Escalated</h6><h3 id="s-escalated" class="text-danger">—</h3></div></div>
+  </div>
+
+  <div class="table-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0"><i class="fas fa-list me-2"></i>Complaints at State Level</h5>
+      <div class="d-flex align-items-center gap-2">
+        <span id="last-updated"></span>
+        <button class="btn btn-sm btn-outline-danger" onclick="renderTable()"><i class="fas fa-sync-alt me-1"></i>Refresh</button>
+      </div>
+    </div>
+
+<!-- Resolution Modal -->
+<div class="modal fade" id="resolveModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">Resolve Complaint (Final)</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="resolveForm">
+          <input type="hidden" id="res-complaint-id">
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Complaint ID</label>
+            <input type="text" class="form-control" id="res-display-id" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Officer Name</label>
+            <input type="text" class="form-control" id="res-officer-name" required placeholder="Enter your full name">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Officer ID</label>
+            <input type="text" class="form-control" id="res-officer-id" required placeholder="Enter your official ID">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Resolution Proof (Image)</label>
+            <input type="file" class="form-control" id="res-proof-file" accept="image/*" required>
+            <div class="form-text">Please upload a photo showing the final resolution.</div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" onclick="submitResolveForm()">Submit Resolution</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- View Details Modal -->
+<div class="modal fade" id="viewDetailsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>Complaint #<span id="vd-id"></span></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-4">
+          <div class="col-md-6">
+            <h6 class="fw-bold mb-3 border-bottom pb-2 text-danger">👤 Submitted By</h6>
+            <p class="mb-1"><span class="text-muted small">Name:</span> <strong id="vd-user-name"></strong></p>
+            <h6 class="fw-bold mt-4 mb-3 border-bottom pb-2 text-danger">📍 Location</h6>
+            <p class="mb-1"><span class="text-muted small">District:</span> <strong id="vd-district"></strong></p>
+            <p class="mb-1"><span class="text-muted small">Ward/Area:</span> <strong id="vd-area"></strong></p>
+          </div>
+          <div class="col-md-6">
+            <h6 class="fw-bold mb-3 border-bottom pb-2 text-danger">📝 Complaint Details</h6>
+            <p class="mb-1"><span class="text-muted small">Title:</span> <strong id="vd-title"></strong></p>
+            <p class="mb-2"><span class="text-muted small">Description:</span></p>
+            <p id="vd-description" class="p-2 border rounded bg-light" style="font-size:0.88rem;min-height:60px;"></p>
+            <h6 class="fw-bold mt-4 mb-3 border-bottom pb-2 text-danger">📊 Status</h6>
+            <div id="vd-status-badge"></div>
+            <p class="mt-2" id="vd-sla-text"></p>
+          </div>
+          <div class="col-12" id="vd-esc-container" style="display:none;">
+            <div class="alert alert-danger border-0 shadow-sm">
+              <h6 class="fw-bold mb-2 small text-uppercase"><i class="fas fa-arrow-up me-1"></i>Escalated By Previous Officer</h6>
+              <p class="mb-1 small"><strong>Officer:</strong> <span id="vd-esc-officer"></span></p>
+              <p class="mb-0 small"><strong>Reason:</strong> <span id="vd-esc-reason"></span></p>
+            </div>
+          </div>
+          <div class="col-12" id="vd-proof-container" style="display:none;">
+            <h6 class="fw-bold mb-3 border-bottom pb-2 text-danger">🖼 Proof</h6>
+            <div class="text-center p-2 border rounded bg-light">
+              <img id="vd-proof-img" src="" style="max-width:100%;max-height:400px;cursor:pointer;" onclick="window.open(this.src,'_blank')">
+              <p class="mt-2 text-muted small"><i class="fas fa-external-link-alt me-1"></i>Click to view full size</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" id="vd-actions"></div>
+    </div>
+  </div>
+</div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr><th>ID</th><th>Title</th><th>Category</th><th>Priority</th><th>Status</th><th>SLA</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="complaint-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="history-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0"><i class="fas fa-history me-2 text-muted"></i>Recent Actions</h5>
+    </div>
+    <div id="history-list"><div class="text-muted small">No recent actions.</div></div>
+  </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js' %}"></script>
+<script>
+var LEVEL=4, ROLE_NAME="State Authority";
+var LEVEL_NAME="state";
+var API="http://127.0.0.1:8000/api/complaints";
+let SLA_TIME = 60000;
+
+async function fetchLevelComplaints() {
+    try {
+        const res = await fetch(`${API}/list/?level=${LEVEL_NAME}`);
+        const json = await res.json();
+        if (json.success && json.sla_ms) {
+            SLA_TIME = json.sla_ms;
+        }
+        return json.success ? json.complaints : [];
+    } catch(_) { return []; }
+}
+async function apiResolve(dbId, reason) {
+    const res = await fetch(`${API}/${dbId}/resolve/`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({reason: reason||'Resolved by '+ROLE_NAME}) }); return res.json();
+}
+function normalize(c) {
+    const escalated_at = c.escalated_at ? new Date(c.escalated_at).getTime() : null;
+    return { 
+        id:'CMP'+String(c.id).padStart(3,'0'), 
+        _dbId:c.id, 
+        title:c.title||c.description||'—', 
+        area: c.area || '—',
+        category:c.category||'—', 
+        priority:c.priority||'low', 
+        imageProof: c.image_proof || null,
+        proof: c.resolution_proof || null,
+        status:c.status.charAt(0).toUpperCase()+c.status.slice(1), 
+        currentLevel:LEVEL, 
+        level:LEVEL, 
+        createdAt:new Date(c.created_at).getTime(), 
+        levelStartedAt: escalated_at || new Date(c.created_at).getTime(), 
+        escalationCount:c.escalation_count || 0, 
+        escalationLog:c.escalation_log || [], 
+        isEditable:c.is_editable, 
+        isActiveHere:c.is_active_at_level,
+        citizenAccepted: c.citizen_accepted,
+        escalationReason: c.escalation_reason || null,
+        escalatingOfficer: c.escalating_officer || null,
+        resolutionOfficer: c.resolution_officer || null,
+        description: c.description || '',
+        district: c.district || '—',
+        citizenName: c.citizen_name || '—',
+    };
+}
+var _complaints = [];
+function load(){ return _complaints; }
+function save(){}
+
+// ── COMPLAINT DATA STRUCTURE ──
+function createComplaint(data){
+  return{
+    id:'CIV'+Date.now(),
+    title:data.title,
+    category:data.category,
+    priority:data.priority,
+    status:'Pending',
+    currentLevel:4, // Start at State level
+    level:4, // Keep both fields in sync
+    createdAt:Date.now(),
+    lastUpdated:Date.now(), // CRITICAL: Set initial timer
+    levelStartedAt:Date.now(),
+    escalationLog:[],
+    escalationCount:0,
+    isEditable:true,
+    history:[1, 2, 3, 4], // Track all levels passed
+    ...data
+  };
+}
+
+function ensureLevelStarted(c){ if(!c.levelStartedAt) c.levelStartedAt = c.createdAt || Date.now(); }
+
+function getSLAPercent(c){
+  ensureLevelStarted(c);
+  return Math.min(((Date.now() - new Date(c.levelStartedAt).getTime()) / SLA_TIME) * 100, 100);
+}
+
+function slaCell(c){
+  if(c.status==='Resolved'){
+    var reward = c.reward ? '<br><span class="badge-reward">'+c.reward+'</span>' : '';
+    return '<span class="sla-ok">✔ Resolved'+reward+'</span>';
+  }
+  var pct = getSLAPercent(c);
+  ensureLevelStarted(c);
+  var deadline = new Date(new Date(c.levelStartedAt).getTime() + SLA_TIME);
+  var diffH = (deadline - Date.now()) / 3600000;
+  var fmt = deadline.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+' '+deadline.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  var barColor='#22c55e', label='', cls='sla-ok';
+  if(pct>=100){barColor='#dc2626';label='🚨 SLA Breached';cls='sla-danger';}
+  else if(pct>=90){barColor='#dc2626';label='🚨 Escalation risk!';cls='sla-danger';}
+  else if(pct>=70){barColor='#f59e0b';label='⚠️ Deadline approaching!';cls='sla-warn';}
+  else{label=Math.ceil(diffH)+'h left';}
+  return '<span class="'+cls+'">'+label+'<br><div class="sla-bar-wrap"><div class="sla-bar-fill" style="width:'+pct.toFixed(1)+'%;background:'+barColor+';"></div></div><small style="font-size:10px;color:#94a3b8;">'+pct.toFixed(0)+'% used · due '+fmt+'</small></span>';
+}
+
+function accountabilityCell(c){
+  var parts=[];
+  
+  // If resolved, only show reward badge
+  if(c.status==='Resolved'){
+    if(c.reward) parts.push('<span class="badge-reward">'+c.reward+'</span>');
+    return parts.length ? parts.join('<br>') : '<span class="text-muted small">—</span>';
+  }
+  
+  // Only show warnings for pending/non-resolved complaints
+  var esc=c.escalationCount||0;
+  // State level = critical failure by definition
+  if(c.status!=='Resolved') parts.push('<span class="badge-critical">🚨 Critical Failure (State Level)</span>');
+  if(esc>=3) parts.push('<span class="badge-penalty">⬇️ Performance Drop ('+esc+' esc.)</span>');
+  else if(esc>=1) parts.push('<span class="badge-penalty">⚠️ Warning ('+esc+' esc.)</span>');
+  if(c.reward) parts.push('<span class="badge-reward">'+c.reward+'</span>');
+  return parts.length ? parts.join('<br>') : '<span class="text-muted small">—</span>';
+}
+
+function sbadge(s, accepted = true){var m={'Pending':['#f59e0b','#fffbeb','#92400e'],'In Progress':['#3b82f6','#eff6ff','#1d4ed8'],'Resolved':['#22c55e','#f0fdf4','#15803d'],'Escalated':['#ef4444','#fef2f2','#b91c1c']};
+if ((s||'').toLowerCase() === 'resolved' && !accepted) {
+  return '<span class="dot-badge" style="background:#fffbeb;color:#92400e;border:1px solid #f59e0b44"><span class="dot" style="background:#f59e0b"></span>Awaiting Approval</span>';
+}
+var r=m[s]||['#6b7280','#f3f4f6','#374151'];return '<span class="dot-badge" style="background:'+r[1]+';color:'+r[2]+';border:1px solid '+r[0]+'44"><span class="dot" style="background:'+r[0]+'"></span>'+s+'</span>';}
+
+function priorityBadge(p){var m={high:['#ef4444','#fef2f2','#b91c1c'],medium:['#f59e0b','#fffbeb','#92400e'],low:['#22c55e','#f0fdf4','#15803d']};var r=m[p]||['#6b7280','#f3f4f6','#374151'];return '<span class="dot-badge" style="background:'+r[1]+';color:'+r[2]+';border:1px solid '+r[0]+'44"><span class="dot" style="background:'+r[0]+'"></span>'+p+'</span>';}
+
+function getSLAStatus(c){
+  if(c.status==='Resolved')return{status:'resolved',text:'✔ Resolved',class:'sla-ok',icon:'🟢',remaining:0};
+  var elapsed=Date.now()-c.levelStartedAt, remaining=SLA_TIME-elapsed;
+  if(remaining<=0)return{status:'escalated',text:'🚨 Escalated',class:'sla-danger',icon:'🚨',remaining:0};
+  if(remaining<=SLA_TIME*0.3)return{status:'warning',text:'⚠️ Almost',class:'sla-warn',icon:'⚠️',remaining:remaining};
+  return{status:'safe',text:'🟢 Within Time',class:'sla-ok',icon:'🟢',remaining:remaining};
+}
+
+function updateTimestamp(){
+  var el=document.getElementById('last-updated');
+  if(el)el.textContent='Updated '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function renderHistory(){
+  var logs=[];
+  _complaints.forEach(function(c){
+    (c.escalationLog||[]).forEach(function(e){
+      if(!e||(!e.action&&!e.by))return;
+      logs.push({action:e.action||'Updated',by:e.by||'System',time:e.time||new Date().toISOString(),complaintId:c.id});
+    });
+  });
+  logs.sort(function(a,b){return new Date(b.time)-new Date(a.time);});
+  var recent=logs.slice(0,6);
+  var el=document.getElementById('history-list');
+  if(!el)return;
+  if(!recent.length){el.innerHTML='<div class="text-muted small">No recent activity at '+ROLE_NAME+' level</div>';return;}
+  var dotColor={Resolved:'#22c55e',Escalated:'#ef4444','Auto-Escalated (SLA Breach)':'#f59e0b'};
+  el.innerHTML=recent.map(function(e){
+    var color=dotColor[e.action]||'#3b82f6';
+    var t=new Date(e.time).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    return '<div class="history-item"><div class="history-dot" style="background:'+color+';"></div><div><div class="history-text"><strong>'+e.complaintId+'</strong> — '+e.action+' by <strong>'+e.by+'</strong></div><div class="history-time">'+t+'</div></div></div>';
+  }).join('');
+}
+
+function getVisibleComplaints(level) { return _complaints; }
+
+function renderTable(){
+  fetchLevelComplaints().then(function(raw){ 
+    _complaints = raw.map(normalize); 
+    _renderTableUI(_complaints); 
+    // Public alerts fetch
+    fetch(`${API}/list/?level=all`).then(r => r.json()).then(json => {
+        if (json.success) renderPublicAlerts(json.complaints);
+    });
+  });
+}
+
+function _renderTableUI(mine){
+  var tbody=document.getElementById('complaint-tbody');
+  document.getElementById('s-total').textContent=mine.length;
+  document.getElementById('s-pending').textContent=mine.filter(function(c){return c.status!=='Resolved';}).length;
+  document.getElementById('s-resolved').textContent=mine.filter(function(c){return c.status==='Resolved';}).length;
+  updateTimestamp();
+  renderHistory();
+  if(!mine.length){
+    tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>No complaints at State level yet.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML=mine.map(function(c){
+    var slaStatus=getSLAStatus(c);
+    var actionHtml = '';
+    if (c.isActiveHere && c.status !== 'Resolved') {
+      actionHtml = `<button class="action-btn" style="background:#3b82f6; color:#fff; width:100%;" onclick="openViewDetailsModal('${c._dbId || c.id}')"><i class="fas fa-eye me-1"></i>View Details</button>`;
+    } else {
+      actionHtml = `<button class="action-btn" style="background:#64748b; color:#fff; width:100%;" onclick="openViewDetailsModal('${c._dbId || c.id}')"><i class="fas fa-eye me-1"></i>View Details</button>`;
+    }
+
+    var escHistory = (c.escalationLog||[]).map(e => `<li>${e.action} (L${e.from}->L${e.to})</li>`).join('') || 'None';
+
+    return '<tr id="row-'+c.id+'">'+
+      '<td class="fw-semibold" style="color:#dc2626">'+c.id+'</td>'+
+      '<td>'+c.title+(c.escalatingOfficer ? '<br><small class="text-danger">⬆ Escalated by: '+c.escalatingOfficer+'</small>' : '')+'</td>'+
+      '<td><span class="badge bg-secondary">'+c.category+'</span></td>'+
+      '<td>'+priorityBadge(c.priority)+'</td>'+
+      '<td>'+sbadge(c.status, c.citizenAccepted)+'</td>'+
+      '<td>'+slaCell(c)+'</td>'+
+      '<td>'+
+        actionHtml+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function openResolveModal(id) {
+  const c = _complaints.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('res-complaint-id').value = id;
+  document.getElementById('res-display-id').value = id;
+  document.getElementById('res-officer-name').value = localStorage.getItem('currentRoleName') || '';
+  new bootstrap.Modal(document.getElementById('resolveModal')).show();
+}
+
+function submitResolveForm() {
+  const id = document.getElementById('res-complaint-id').value;
+  const officerName = document.getElementById('res-officer-name').value;
+  const officerId = document.getElementById('res-officer-id').value;
+  const proofFile = document.getElementById('res-proof-file').files[0];
+  if (!officerName || !officerId || !proofFile) { showToast('All fields and proof photo are required', 'warning'); return; }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const proofData = e.target.result;
+    const c = _complaints.find(x => x.id === id);
+    fetch(`${API}/${c._dbId}/resolve/`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ officer_name: officerName, officer_id: officerId, proof: proofData })
+    }).then(r => r.json()).then(json => {
+      if (json.success) {
+        bootstrap.Modal.getInstance(document.getElementById('resolveModal')).hide();
+        showToast('Resolution submitted! Awaiting citizen approval.', 'success');
+        renderTable();
+      } else showToast(json.error || 'Could not resolve', 'warning');
+    });
+  };
+  reader.readAsDataURL(proofFile);
+}
+
+function renderPublicAlerts(all) {
+    const alertContainer = document.getElementById('publicAlerts');
+    if (!alertContainer) return;
+    const overdue = all.filter(c => {
+        const lvl = c.current_level === 'state' ? 4 : (c.current_level === 'district' ? 3 : (c.current_level === 'municipality' ? 2 : 1));
+        return lvl === 4 && (c.status.toLowerCase() !== 'resolved');
+    });
+    if (overdue.length > 0) {
+        alertContainer.innerHTML = `<div class="alert alert-danger shadow-sm border-0 rounded-4 p-3 mb-4" style="border-left: 8px solid #dc3545 !important;">
+            <strong>🚨 Public Warning:</strong> There are ${overdue.length} unresolved State-level complaints. Monitoring system active.
+        </div>`;
+        alertContainer.style.display = 'block';
+    } else {
+        alertContainer.style.display = 'none';
+    }
+}
+
+// State is final level — no escalation. SLA handled server-side.
+
+function openViewDetailsModal(id) {
+  const c = _complaints.find(x => x.id === id || String(x._dbId) === String(id));
+  if (!c) return;
+
+  document.getElementById('vd-id').textContent = c.id;
+  document.getElementById('vd-user-name').textContent = c.citizenName || '—';
+  document.getElementById('vd-district').textContent = c.district || '—';
+  document.getElementById('vd-area').textContent = c.area || '—';
+  document.getElementById('vd-title').textContent = c.title;
+  document.getElementById('vd-description').textContent = c.description || '—';
+  document.getElementById('vd-status-badge').innerHTML = sbadge(c.status, c.citizenAccepted);
+
+  const slaStatus = getSLAStatus(c);
+  const slaEl = document.getElementById('vd-sla-text');
+  slaEl.className = slaStatus.class + ' small fw-bold';
+  slaEl.innerHTML = `${slaStatus.icon} ${slaStatus.text}${slaStatus.remaining > 0 ? ` (${formatTime(slaStatus.remaining)} remaining)` : ''}`;
+
+  const escContainer = document.getElementById('vd-esc-container');
+  const escOfficer = c.escalatingOfficer || c.escalating_officer;
+  const escReason = c.escalationReason || c.escalation_reason;
+  if (escOfficer || escReason) {
+    document.getElementById('vd-esc-officer').textContent = escOfficer || 'Officer';
+    document.getElementById('vd-esc-reason').textContent = escReason || '—';
+    escContainer.style.display = 'block';
+  } else { escContainer.style.display = 'none'; }
+
+  const proofContainer = document.getElementById('vd-proof-container');
+  const proofImg = document.getElementById('vd-proof-img');
+  const img = c.imageProof || c.proof;
+  if (img) { proofImg.src = img; proofContainer.style.display = 'block'; }
+  else { proofContainer.style.display = 'none'; }
+
+  const actionsDiv = document.getElementById('vd-actions');
+  actionsDiv.innerHTML = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>';
+  // State is final level — only Resolve (no Escalate)
+  if (c.isActiveHere && c.status !== 'Resolved') {
+    actionsDiv.innerHTML += `<button type="button" class="btn btn-success" onclick="bootstrap.Modal.getInstance(document.getElementById('viewDetailsModal')).hide(); openResolveModal('${c.id}')">Resolve (Final)</button>`;
+  }
+  new bootstrap.Modal(document.getElementById('viewDetailsModal')).show();
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  var el=document.getElementById('nav-role-name');
+  var em=document.getElementById('nav-email');
+  if(el)el.textContent=localStorage.getItem('currentRoleName')||'State Authority';
+  if(em)em.textContent=localStorage.getItem('currentEmail')||'';
+  renderTable();
+  setInterval(function(){ renderTable(); }, 30000);
+});
+</script>
+<script src="{% static 'js/theme.js' %}"></script>
+</body>
+</html>

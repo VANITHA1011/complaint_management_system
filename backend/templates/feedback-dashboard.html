@@ -1,0 +1,484 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citizen Feedback Dashboard - Vanilla JS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' %}">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        .dark { background-color: #0f172a; color: #f8fafc; }
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .dark .glass { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .chart-container-donut { position: relative; height: 250px; }
+        .donut-center-text {
+            position: absolute;
+            top: 50%;
+            left: calc(50% - 75px); /* Offset for the right-aligned legend */
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+        }
+        @media (max-width: 1024px) {
+            .donut-center-text { left: 50%; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 transition-colors duration-300">
+    <!-- NAVBAR -->
+    <nav class="bg-[#0d6efd] text-white shadow-md w-full sticky top-0 z-40 transition-colors duration-300 dark:bg-slate-900 dark:border-b dark:border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between h-[68px]">
+            <a href="/admin-dashboard/" class="font-bold text-[1.25rem] flex items-center gap-2 text-white hover:text-white/90 transition-colors">
+                <i class="fas fa-user-shield"></i> CIVIX Admin
+            </a>
+            <div class="hidden md:flex items-center gap-6 font-medium">
+                <a href="/admin-profile/" class="text-white/80 hover:text-white flex items-center gap-2 transition-colors"><i class="fas fa-user-circle"></i> Profile</a>
+                <a href="#" onclick="logout(); return false;" class="text-white/80 hover:text-white flex items-center gap-2 transition-colors"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="/admin-dashboard/" class="text-white/80 hover:text-white flex items-center gap-2 transition-colors"><i class="fas fa-chart-bar"></i> Admin Dashboard</a>
+                <a href="/feedback-dashboard/" class="text-white flex items-center gap-2 transition-colors"><i class="fas fa-comments"></i> Feedback</a>
+                
+                <!-- Theme Toggle matching Admin Navbar style -->
+                <div id="themeToggle" class="cursor-pointer ml-2 text-white/80 hover:text-white flex items-center bg-white/10 px-3 py-1.5 rounded-full transition-colors" title="Toggle Light/Dark Mode">
+                    <i id="themeIcon" class="fas fa-moon text-sm"></i>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Content Container -->
+    <div class="min-h-screen pb-20 px-4 md:px-8 max-w-7xl mx-auto mt-10">
+        
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold dark:text-white tracking-tight">Citizen Feedback</h2>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Monitor and analyze citizen feedback submissions.</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div id="statsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Stats will be injected here -->
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="glass p-6 rounded-2xl card-shadow">
+                <h4 class="font-bold text-lg dark:text-white mb-6">Rating Distribution</h4>
+                <div class="h-[250px]"><canvas id="ratingChart"></canvas></div>
+            </div>
+            <div class="glass p-6 rounded-2xl card-shadow">
+                <h4 class="font-bold text-lg dark:text-white mb-6">Category Breakdown</h4>
+                <div class="chart-container-donut">
+                    <canvas id="categoryChart"></canvas>
+                    <div class="donut-center-text">
+                        <p id="donutTotal" class="text-3xl font-extrabold dark:text-white leading-none">0</p>
+                        <p class="text-[10px] uppercase font-bold text-slate-400 tracking-widest mt-1">Total</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="glass rounded-2xl card-shadow overflow-hidden">
+            <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="relative flex-1 max-w-md">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input id="searchInput" type="text" placeholder="Search ID or Name..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:text-white">
+                </div>
+                <div class="flex flex-wrap items-center gap-3 text-sm">
+                    <select id="catFilter" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:text-white">
+                        <option value="All">All Categories</option>
+                    </select>
+                    <select id="rateFilter" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:text-white">
+                        <option value="All">All Ratings</option>
+                        <option value="5">5 Stars</option><option value="4">4 Stars</option><option value="3">3 Stars</option><option value="2">2 Stars</option><option value="1">1 Star</option>
+                    </select>
+                    <button id="exportBtn" class="flex items-center px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium transition-colors">
+                        <i class="fas fa-download mr-2"></i> Export
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                        <tr>
+                            <th class="px-6 py-4 cursor-pointer hover:text-teal-600" data-sort="Complaint ID">ID <i class="fas fa-sort ml-1 opacity-20"></i></th>
+                            <th class="px-6 py-4">Citizen</th>
+                            <th class="px-6 py-4 cursor-pointer hover:text-teal-600" data-sort="Rating">Rating <i class="fas fa-sort ml-1 opacity-20"></i></th>
+                            <th class="px-6 py-4">Feedback</th>
+                            <th class="px-6 py-4 cursor-pointer hover:text-teal-600" data-sort="Feedback Date">Date <i class="fas fa-sort ml-1 opacity-20"></i></th>
+                            <th class="px-6 py-4">Category</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-200 dark:divide-slate-700">
+                        <!-- Table rows will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <!-- Pagination info & buttons will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="modalOverlay"></div>
+        <div class="glass w-full max-w-lg rounded-3xl card-shadow z-10 overflow-hidden animate-fade-in" id="modalContent">
+            <!-- Modal content injected here -->
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api/complaints';
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('civix_user');
+                localStorage.removeItem('authorityRole');
+                window.location.href = '/app/';
+            }
+        }
+
+        // State
+        const state = {
+            data: [],
+            dark: false,
+            search: '',
+            category: 'All',
+            rating: 'All',
+            page: 1,
+            sort: { key: 'Feedback Date', dir: 'desc' },
+            itemsPerPage: 10
+        };
+
+        // Load Data - Fetch from Backend API
+        async function loadData() {
+            try {
+                const response = await fetch(`${API_BASE}/feedback/list/`);
+                const json = await response.json();
+                if (json.success) {
+                    state.data = json.feedbacks.map(fb => ({
+                        "Complaint ID": fb.complaint_id,
+                        "Citizen Name": fb.citizen_name || 'Anonymous',
+                        "Rating": fb.rating,
+                        "Feedback Text": fb.message,
+                        "Feedback Date": fb.created_at, // Format: dd/mm/yyyy
+                        "Category": fb.category || 'General'
+                    }));
+                    
+                    // Trigger re-renders
+                    renderStats();
+                    renderCharts();
+                    renderTable();
+                    populateCategories();
+                }
+            } catch (e) {
+                console.error("Error loading feedback data:", e);
+            }
+        }
+
+
+        const CATEGORY_COLORS = {
+            'Roads': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+            'Water Supply': 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
+            'Street Lights': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+            'Sanitation': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+            'Drainage': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+            'Electricity': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+            'Garbage Collection': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+        };
+
+        let ratingChart, categoryChart;
+
+        // Render Helpers
+        function getStars(rating) {
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                stars += `<i class="${i <= rating ? 'fas' : 'far'} fa-star text-amber-500 text-xs mr-0.5"></i>`;
+            }
+            return stars;
+        }
+
+        function renderStats() {
+            const total = state.data.length;
+            const avg = total > 0 ? (state.data.reduce((a, b) => a + Number(b.Rating), 0) / total).toFixed(1) : "0.0";
+            const pos = total > 0 ? ((state.data.filter(i => i.Rating >= 4).length / total) * 100).toFixed(0) : "0";
+            
+            const cats = {};
+            state.data.forEach(i => cats[i.Category] = (cats[i.Category] || 0) + 1);
+            const most = Object.keys(cats).length > 0 ? Object.keys(cats).reduce((a, b) => cats[a] > cats[b] ? a : b, '') : "N/A";
+
+            const stats = [
+                { t: 'Total Feedback', v: total, i: 'fa-envelope', c: 'teal' },
+                { t: 'Avg Rating', v: `${avg} / 5`, i: 'fa-star', c: 'amber' },
+                { t: 'Positive %', v: `${pos}%`, i: 'fa-thumbs-up', c: 'emerald' },
+                { t: 'Top Category', v: most, i: 'fa-chart-pie', c: 'indigo' }
+            ];
+
+            document.getElementById('statsGrid').innerHTML = stats.map(s => `
+                <div class="glass p-6 rounded-2xl card-shadow flex items-center justify-between">
+                    <div>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">${s.t}</p>
+                        <h3 class="text-2xl font-bold dark:text-white">${s.v}</h3>
+                    </div>
+                    <div class="p-3 rounded-xl bg-${s.c}-500 bg-opacity-10 text-${s.c}-600">
+                        <i class="fas ${s.i} text-lg"></i>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderTable() {
+            let filtered = state.data.filter(i => {
+                const s = state.search.toLowerCase();
+                return (i['Complaint ID'].toLowerCase().includes(s) || i['Citizen Name'].toLowerCase().includes(s)) &&
+                       (state.category === 'All' || i.Category === state.category) &&
+                       (state.rating === 'All' || i.Rating === state.rating);
+            });
+
+            filtered.sort((a, b) => {
+                const valA = a[state.sort.key], valB = b[state.sort.key];
+                if (valA < valB) return state.sort.dir === 'asc' ? -1 : 1;
+                if (valA > valB) return state.sort.dir === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            const total = filtered.length;
+            const pages = Math.ceil(total / state.itemsPerPage);
+            const start = (state.page - 1) * state.itemsPerPage;
+            const paginated = filtered.slice(start, start + state.itemsPerPage);
+
+            document.getElementById('tableBody').innerHTML = paginated.map(i => `
+                <tr class="hover:bg-teal-50/30 dark:hover:bg-teal-900/10 cursor-pointer transition-colors" onclick="openModal('${i['Complaint ID']}')">
+                    <td class="px-6 py-4 font-mono text-sm text-teal-600 dark:text-teal-400 font-bold">${i['Complaint ID']}</td>
+                    <td class="px-6 py-4 font-semibold dark:text-white uppercase text-sm">${i['Citizen Name']}</td>
+                    <td class="px-6 py-4">${getStars(i.Rating)}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400 max-w-xs truncate">${i['Feedback Text']}</td>
+                    <td class="px-6 py-4 text-sm text-slate-500">${i['Feedback Date']}</td>
+                    <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${CATEGORY_COLORS[i.Category] || 'bg-slate-100'}">${i.Category}</span></td>
+                </tr>
+            `).join('') || `<tr><td colspan="6" class="px-6 py-20 text-center text-slate-400">No results found</td></tr>`;
+
+            // Update Pagination
+            document.getElementById('pagination').innerHTML = `
+                <div class="text-sm text-slate-500">Showing <b>${start + 1}</b> to <b>${Math.min(start + state.itemsPerPage, total)}</b> of <b>${total}</b></div>
+                <div class="flex gap-2">
+                    <button onclick="changePage(-1)" ${state.page === 1 ? 'disabled' : ''} class="p-2 border rounded-xl dark:text-white disabled:opacity-30">Prev</button>
+                    <span class="flex items-center px-4 font-medium dark:text-white">${state.page} / ${pages || 1}</span>
+                    <button onclick="changePage(1)" ${state.page === pages || pages === 0 ? 'disabled' : ''} class="p-2 border rounded-xl dark:text-white disabled:opacity-30">Next</button>
+                </div>
+            `;
+        }
+
+        function renderCharts() {
+            const rData = [0,0,0,0,0]; 
+            state.data.forEach(i => rData[i.Rating - 1]++);
+            
+            const cData = {}; 
+            state.data.forEach(i => cData[i.Category] = (cData[i.Category] || 0) + 1);
+            const sortedCats = Object.entries(cData).sort((a,b) => b[1] - a[1]);
+            const totalFeedback = state.data.length;
+            document.getElementById('donutTotal').innerText = totalFeedback;
+
+            if (ratingChart) ratingChart.destroy();
+            if (categoryChart) categoryChart.destroy();
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+
+            // Register plugin
+            Chart.register(ChartDataLabels);
+
+            // Rating Bar Chart
+            ratingChart = new Chart(document.getElementById('ratingChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
+                    datasets: [{ 
+                        data: rData, 
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            gradient.addColorStop(0, '#0d9488');
+                            gradient.addColorStop(1, '#2dd4bf');
+                            return gradient;
+                        },
+                        borderRadius: 12,
+                        hoverBackgroundColor: '#0f766e'
+                    }]
+                },
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: textColor,
+                            font: { weight: 'bold', size: 10 },
+                            formatter: (val) => val > 0 ? val : ''
+                        },
+                        tooltip: {
+                            backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                            titleColor: isDark ? '#ffffff' : '#1e293b',
+                            bodyColor: isDark ? '#94a3b8' : '#64748b',
+                            borderColor: isDark ? '#334155' : '#e2e8f0',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false
+                        }
+                    },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: gridColor, drawBorder: false },
+                            ticks: { color: textColor, font: { size: 11, weight: '500' } },
+                            suggestedMax: Math.max(...rData) * 1.15
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: textColor, font: { size: 11, weight: '600' } }
+                        }
+                    }
+                }
+            });
+
+            // Category Donut Chart
+            categoryChart = new Chart(document.getElementById('categoryChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: sortedCats.map(c => c[0]),
+                    datasets: [{ 
+                        data: sortedCats.map(c => c[1]), 
+                        backgroundColor: [
+                            '#0d9488', '#0ea5e9', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 15
+                    }]
+                },
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%', 
+                    plugins: { 
+                        datalabels: { display: false }, // Hide labels inside donut
+                        legend: { 
+                            position: 'right',
+                            labels: { 
+                                color: textColor, 
+                                boxWidth: 8, 
+                                usePointStyle: true, 
+                                pointStyle: 'circle',
+                                padding: 15,
+                                font: { size: 11, weight: '500' }
+                            }
+                        },
+                        tooltip: {
+                            padding: 12,
+                            backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                            titleColor: isDark ? '#ffffff' : '#1e293b',
+                            bodyColor: isDark ? '#94a3b8' : '#64748b',
+                            borderColor: isDark ? '#334155' : '#e2e8f0',
+                            borderWidth: 1
+                        }
+                    }
+                }
+            });
+        }
+
+        // Actions
+        window.changePage = (dir) => { state.page += dir; renderTable(); };
+        window.openModal = (id) => {
+            const item = state.data.find(i => i['Complaint ID'] === id);
+            document.getElementById('modalContent').innerHTML = `
+                <div class="p-6 border-b dark:border-slate-700 flex justify-between items-center">
+                    <h4 class="font-bold text-xl dark:text-white">Feedback Details</h4>
+                    <button onclick="closeModal()" class="text-slate-400">&times;</button>
+                </div>
+                <div class="p-8">
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div><p class="text-[10px] uppercase font-bold text-slate-400">ID</p><p class="font-bold text-teal-600">${item['Complaint ID']}</p></div>
+                        <div><p class="text-[10px] uppercase font-bold text-slate-400">Category</p><p class="font-bold dark:text-white">${item.Category}</p></div>
+                    </div>
+                    <div class="mb-6"><p class="text-[10px] uppercase font-bold text-slate-400 mb-2">Citizen</p><p class="font-bold text-lg dark:text-white">${item['Citizen Name']}</p></div>
+                    <div class="bg-slate-50 dark:bg-slate-900 border dark:border-slate-800 p-6 rounded-2xl mb-8">
+                        <div class="flex justify-between items-center mb-4"><span class="text-xs text-slate-400">Rating</span><div>${getStars(item.Rating)}</div></div>
+                        <p class="italic text-slate-600 dark:text-slate-300">"${item['Feedback Text']}"</p>
+                    </div>
+                    <button onclick="closeModal()" class="w-full bg-teal-600 text-white font-bold py-3 rounded-2xl">Mark as Reviewed</button>
+                </div>
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        };
+        window.closeModal = () => document.getElementById('modal').classList.add('hidden');
+
+        function populateCategories() {
+            const catFilter = document.getElementById('catFilter');
+            if (!catFilter) return;
+            // Clear existing except "All"
+            catFilter.innerHTML = '<option value="All">All Categories</option>';
+            const cats = Array.from(new Set(state.data.map(i => i.Category)));
+            catFilter.innerHTML += cats.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check global theme
+            const globalTheme = localStorage.getItem('theme');
+            if (globalTheme === 'dark') {
+                state.dark = true;
+                document.documentElement.classList.add('dark');
+                const themeIcon = document.getElementById('themeIcon');
+                if (themeIcon) themeIcon.className = 'fas fa-sun';
+            }
+
+            // Initial Data Load
+            await loadData();
+
+            // Listeners
+            document.getElementById('searchInput').oninput = (e) => { state.search = e.target.value; state.page = 1; renderTable(); };
+            document.getElementById('catFilter').onchange = (e) => { state.category = e.target.value; state.page = 1; renderTable(); };
+            document.getElementById('rateFilter').onchange = (e) => { state.rating = e.target.value; state.page = 1; renderTable(); };
+            document.getElementById('themeToggle').onclick = () => {
+                state.dark = !state.dark;
+                document.documentElement.classList.toggle('dark');
+                document.getElementById('themeIcon').className = state.dark ? 'fas fa-sun' : 'fas fa-moon';
+                renderCharts(); // Redraw with new colors
+            };
+            document.querySelectorAll('[data-sort]').forEach(th => th.onclick = () => {
+                const key = th.dataset.sort;
+                state.sort.dir = (state.sort.key === key && state.sort.dir === 'asc') ? 'desc' : 'asc';
+                state.sort.key = key;
+                renderTable();
+            });
+            document.getElementById('exportBtn').onclick = () => {
+                const csv = ["ID,Citizen,Rating,Feedback,Date,Category", ...state.data.map(i => `${i['Complaint ID']},"${i['Citizen Name']}",${i.Rating},"${i['Feedback Text']}",${i['Feedback Date']},${i.Category}`)].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'feedback.csv'; a.click();
+            };
+            document.getElementById('modalOverlay').onclick = closeModal;
+        });
+    </script>
+</body>
+</html>

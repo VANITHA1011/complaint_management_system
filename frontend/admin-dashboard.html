@@ -1,0 +1,615 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard - CIVIX</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/theme.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            background: var(--bg-body);
+            color: var(--text-primary);
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        /* Admin Stats Cards */
+
+        .stats-card {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+            transition: 0.3s;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .stats-card h6 {
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        .stats-card h2 {
+            font-weight: 700;
+        }
+
+        /* Chart Card */
+
+        .chart-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .chart-container {
+            height: 360px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <script>
+        // Admin Auth Guard
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        if (!user || user.role !== 'admin') {
+            window.location.href = '/';
+        }
+    </script>
+
+    <!-- NAVBAR -->
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+
+        <div class="container">
+
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-user-shield me-2"></i>
+                CIVIX Admin
+            </a>
+
+            <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="menu">
+
+                <ul class="navbar-nav ms-auto align-items-center">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin-profile.html">
+                            <i class="fas fa-user-circle"></i> Profile
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="logout(); return false;">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/admin-dashboard.html">
+                            <i class="fas fa-chart-bar"></i> Admin Dashboard
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/feedback-dashboard.html">
+                            <i class="fas fa-comments"></i> Feedback
+                        </a>
+                    </li>
+
+
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="toggleTheme()" id="themeToggleBtn">
+                            <i class="fas fa-moon me-1"></i><span id="themeToggleText">Dark Mode</span>
+                        </a>
+                    </li>
+
+                </ul>
+
+            </div>
+        </div>
+    </nav>
+
+    <!-- PAGE CONTENT -->
+
+    <div class="container mt-5">
+
+        <h2 class="fw-bold">Admin Dashboard & Analytics</h2>
+        <p class="text-muted">Monitor complaints and system performance.</p>
+
+        <!-- STATS CARDS -->
+
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-5 g-3 mt-3 align-items-stretch">
+
+            <div class="col">
+                <div class="stats-card h-100 d-flex flex-column justify-content-center p-3">
+                    <h6 class="mb-2">Total Complaints</h6>
+                    <h2 id="adminTotalComplaints" class="mb-0">0</h2>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="stats-card h-100 d-flex flex-column justify-content-center p-3">
+                    <h6 class="mb-2">Total Citizens</h6>
+                    <h2 id="totalUsers" class="mb-0">0</h2>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="stats-card h-100 d-flex flex-column justify-content-center p-3">
+                    <h6 class="mb-2">Total Authorities</h6>
+                    <h2 id="totalAuthorities" class="mb-0">0</h2>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="stats-card h-100 d-flex flex-column justify-content-center p-3">
+                    <h6 class="mb-2">Escalated Cases</h6>
+                    <h2 id="escalatedComplaints" class="text-danger mb-0">0</h2>
+                </div>
+            </div>
+
+            <div class="col">
+                <a href="/feedback-dashboard.html" class="text-decoration-none h-100 d-block">
+                    <div class="stats-card bg-light border-primary h-100 d-flex flex-column justify-content-center p-3">
+                        <h6 class="text-primary mb-1">Citizen Feedback</h6>
+                        <h2 class="text-primary mb-1"><i class="fas fa-external-link-alt" style="font-size: 1.2rem;"></i></h2>
+                        <small class="text-muted">View Analytics</small>
+                    </div>
+                </a>
+            </div>
+
+        </div>
+
+        <!-- CHARTS -->
+
+        <div class="row mt-5">
+
+            <!-- STATUS DONUT -->
+
+            <div class="col-lg-6 mb-4">
+
+                <div class="chart-card">
+
+                    <h5 class="mb-4">
+                        <i class="fas fa-chart-pie text-primary"></i>
+                        Complaint Status Distribution
+                    </h5>
+
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- CATEGORY BAR -->
+
+            <div class="col-lg-6 mb-4">
+
+                <div class="chart-card">
+
+                    <h5 class="mb-4">
+                        <i class="fas fa-chart-bar text-primary"></i>
+                        Complaints by Category
+                    </h5>
+
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- MONTHLY TREND LINE CHART -->
+        <div class="row mt-4">
+            <div class="col-12 mb-4">
+                <div class="chart-card">
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                            <h5>
+                                <i class="fas fa-chart-line text-primary"></i>
+                                Monthly Complaint Trends
+                            </h5>
+                            <small class="text-muted">Understand which month has highest complaints to support better
+                                resource planning.</small>
+                        </div>
+                    </div>
+                    <div class="chart-container" style="height: 360px;">
+                        <canvas id="monthlyComplaintChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BOOTSTRAP -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api/complaints';
+        const AUTH_API = 'http://127.0.0.1:8000/api';
+
+        document.addEventListener("DOMContentLoaded", async function () {
+            // Function to update admin dashboard data from API
+            async function updateAdminDashboard() {
+                try {
+                    // 1. Fetch Stats for Metrics
+                    const statsRes = await fetch(`${API_BASE}/dashboard/`);
+                    const statsData = await statsRes.json();
+                    
+                    if (statsData.success) {
+                        const s = statsData.stats;
+                        if (document.getElementById("adminTotalComplaints")) document.getElementById("adminTotalComplaints").innerText = s.total;
+                        if (document.getElementById("totalUsers")) document.getElementById("totalUsers").innerText = s.total_citizens;
+                        if (document.getElementById("totalAuthorities")) document.getElementById("totalAuthorities").innerText = s.total_authorities;
+                        if (document.getElementById("escalatedComplaints")) document.getElementById("escalatedComplaints").innerText = s.escalated;
+                    }
+
+                    // 2. Fetch All Complaints for Charts
+                    const complaintsRes = await fetch(`${API_BASE}/list/?level=all`);
+                    const complaintsData = await complaintsRes.json();
+                    let complaints = [];
+                    if (complaintsData.success) complaints = complaintsData.complaints;
+
+                    // Process Data for Charts
+                    let pendingCount = 0, inProgressCount = 0, escalatedCount = 0, resolvedCount = 0;
+                    let categoryCounts = { 'water': 0, 'electricity': 0, 'garbage': 0, 'roads': 0, 'other': 0 };
+                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    let monthlyCounts = new Array(12).fill(0);
+
+                    complaints.forEach(c => {
+                        const statusString = String(c.status || '').toLowerCase().trim();
+                        if (statusString === 'pending') pendingCount++;
+                        else if (statusString === 'in-progress' || statusString === 'in progress') inProgressCount++;
+                        else if (statusString === 'escalated') escalatedCount++;
+                        else if (statusString === 'resolved') resolvedCount++;
+
+                        const cat = (c.category || '').toLowerCase();
+                        if (cat.includes('water')) categoryCounts['water']++;
+                        else if (cat.includes('elect')) categoryCounts['electricity']++;
+                        else if (cat.includes('garb') || cat.includes('sanit')) categoryCounts['garbage']++;
+                        else if (cat.includes('road')) categoryCounts['roads']++;
+                        else categoryCounts['other']++;
+
+                        if (c.created_at) {
+                            const date = new Date(c.created_at);
+                            if (!isNaN(date.getTime())) {
+                                monthlyCounts[date.getMonth()]++;
+                            }
+                        }
+                    });
+
+                    // Update Status Donut Chart
+                    const statusChart = Chart.getChart("statusChart");
+                    if (statusChart) {
+                        statusChart.data.datasets[0].data = [pendingCount, inProgressCount, escalatedCount, resolvedCount];
+                        statusChart.update();
+                    } else {
+                        // INITIALIZE STATUS DONUT CHART
+                        new Chart(document.getElementById("statusChart"), {
+                            type: "doughnut",
+                            data: {
+                                labels: ["Pending", "In Progress", "Escalated", "Resolved"],
+                                datasets: [{
+                                    data: [pendingCount, inProgressCount, escalatedCount, resolvedCount],
+                                    backgroundColor: ["#f59e0b", "#3b82f6", "#ef4444", "#10b981"]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { position: "bottom" } },
+                                cutout: "65%"
+                            }
+                        });
+                    }
+
+                    // Update Category Bar Chart
+                    const categoryChart = Chart.getChart("categoryChart");
+                    if (categoryChart) {
+                        categoryChart.data.datasets[0].data = [categoryCounts['water'], categoryCounts['electricity'], categoryCounts['garbage'], categoryCounts['roads'], categoryCounts['other']];
+                        categoryChart.update();
+                    } else {
+                        // INITIALIZE CATEGORY BAR CHART
+                        new Chart(document.getElementById("categoryChart"), {
+                            type: "bar",
+                            data: {
+                                labels: ["Water", "Electricity", "Garbage", "Roads", "Others"],
+                                datasets: [{
+                                    label: "Total Complaints",
+                                    data: [categoryCounts['water'], categoryCounts['electricity'], categoryCounts['garbage'], categoryCounts['roads'], categoryCounts['other']],
+                                    backgroundColor: "#6366f1",
+                                    borderRadius: 6
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } },
+                                scales: { y: { beginAtZero: true } }
+                            }
+                        });
+                    }
+
+                    // Update Monthly Trend Chart
+                    const monthlyChart = Chart.getChart("monthlyComplaintChart");
+                    if (monthlyChart) {
+                        monthlyChart.data.datasets[0].data = monthlyCounts;
+                        monthlyChart.update();
+                    } else {
+                        // INITIALIZE MONTHLY TREND LINE CHART
+                        new Chart(document.getElementById("monthlyComplaintChart"), {
+                            type: "line",
+                            data: {
+                                labels: months,
+                                datasets: [{
+                                    label: "Complaints per Month",
+                                    data: monthlyCounts,
+                                    borderColor: "#3B82F6",
+                                    backgroundColor: "rgba(59,130,246,0.2)",
+                                    tension: 0.4,
+                                    fill: true
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: true, position: "bottom" } },
+                                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                            }
+                        });
+                    }
+
+                    // 3. Fetch Feedbacks
+                    const feedbackRes = await fetch(`${API_BASE}/feedback/list/`);
+                    const feedbackDataJson = await feedbackRes.json();
+                    const feedbackTableBody = document.getElementById('adminFeedbackTable');
+                    if (feedbackTableBody && feedbackDataJson.success) {
+                        const feedbacks = feedbackDataJson.feedbacks;
+                        if (feedbacks.length === 0) {
+                            feedbackTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No feedback received yet.</td></tr>';
+                        } else {
+                            feedbackTableBody.innerHTML = feedbacks.map(fb => `
+                                <tr>
+                                    <td class="fw-bold text-primary">#${fb.complaint_id}</td>
+                                    <td class="small">${fb.citizen_name || 'Anonymous'}</td>
+                                    <td>
+                                        <div class="text-warning">
+                                            ${'★'.repeat(fb.rating)}${'☆'.repeat(5 - fb.rating)}
+                                        </div>
+                                    </td>
+                                    <td><small class="text-muted text-truncate d-inline-block" style="max-width: 250px;" title="${fb.message}">${fb.message}</small></td>
+                                    <td>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3">Reviewed</span>
+                                    </td>
+                                </tr>
+                            `).join('');
+                        }
+                    }
+
+                } catch (e) {
+                    console.error("Error fetching admin dashboard data:", e);
+                }
+            }
+
+            // Initial Load
+            await updateAdminDashboard();
+
+            // Refresh every 30 seconds for real-time feel
+            setInterval(updateAdminDashboard, 30000);
+
+            // Profile data (still from localStorage or defaults)
+            let adminProfile = { name: 'Admin User', email: 'admin@civix.gov', accessLevel: 'System Administrator' };
+            try {
+                const storedProfile = localStorage.getItem('adminProfile');
+                if (storedProfile) adminProfile = JSON.parse(storedProfile);
+            } catch (e) { }
+
+            const profileNameEl = document.getElementById('profileName');
+            const profileEmailEl = document.getElementById('profileEmail');
+            const profileAccessEl = document.getElementById('profileAccess');
+            if (profileNameEl) profileNameEl.textContent = adminProfile.name;
+            if (profileEmailEl) profileEmailEl.textContent = adminProfile.email;
+            if (profileAccessEl) profileAccessEl.textContent = adminProfile.accessLevel;
+
+        }); // End DOMContentLoaded
+
+        // Profile page functions and global handlers
+        function showPage(pageId) {
+            // Hide all page content
+            const pages = document.querySelectorAll('.page-content');
+            pages.forEach(page => page.style.display = 'none');
+
+            // Show selected page
+            const selectedPage = document.getElementById(pageId);
+            if (selectedPage) {
+                selectedPage.style.display = 'block';
+            }
+
+            // Update navigation active state
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => link.classList.remove('active'));
+
+            // Set active link based on page
+            if (pageId === 'profile') {
+                const profileLink = document.querySelector('a[href*="admin-profile"]');
+                if (profileLink) profileLink.classList.add('active');
+            }
+        }
+
+        function showAdminDashboard() {
+            showPage('admin-dashboard-content');
+        }
+
+        function toggleEditMode() {
+            const profilePage = document.getElementById('profilePage');
+            if (!profilePage) return;
+
+            const isEditMode = profilePage.dataset.editMode === 'true';
+
+            if (isEditMode) {
+                // Save changes and exit edit mode
+                saveProfileChanges();
+                exitEditMode();
+            } else {
+                // Enter edit mode
+                enterEditMode();
+            }
+        }
+
+        function enterEditMode() {
+            const profilePage = document.getElementById('profilePage');
+            if (!profilePage) return;
+
+            profilePage.dataset.editMode = 'true';
+
+            // Convert display fields to editable inputs
+            const nameEl = document.getElementById('profileName');
+            const emailEl = document.getElementById('profileEmail');
+            const accessEl = document.getElementById('profileAccess');
+
+            if (nameEl) {
+                const currentName = nameEl.textContent;
+                nameEl.innerHTML = `<input type="text" class="form-control" id="profileNameEdit" value="${currentName}" />`;
+            }
+
+            if (emailEl) {
+                const currentEmail = emailEl.textContent;
+                emailEl.innerHTML = `<input type="email" class="form-control" id="profileEmailEdit" value="${currentEmail}" />`;
+            }
+
+            if (accessEl) {
+                const currentAccess = accessEl.textContent;
+                accessEl.innerHTML = `<input type="text" class="form-control" id="profileAccessEdit" value="${currentAccess}" />`;
+            }
+
+            // Update edit button
+            const editBtn = profilePage.querySelector('button[onclick*="toggleEditMode"]');
+            if (editBtn) {
+                editBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
+                editBtn.className = 'btn btn-success';
+            }
+        }
+
+        function exitEditMode() {
+            const profilePage = document.getElementById('profilePage');
+            if (!profilePage) return;
+
+            profilePage.dataset.editMode = 'false';
+
+            // Get current profile data from localStorage
+            let adminProfile = {
+                name: 'Admin User',
+                email: 'admin@civix.gov',
+                accessLevel: 'System Administrator'
+            };
+
+            try {
+                const storedProfile = localStorage.getItem('adminProfile');
+                if (storedProfile) {
+                    adminProfile = JSON.parse(storedProfile);
+                }
+            } catch (e) {
+                console.error("Error parsing admin profile from localStorage", e);
+            }
+
+            // Restore display fields with stored values
+            const nameEl = document.getElementById('profileName');
+            const emailEl = document.getElementById('profileEmail');
+            const accessEl = document.getElementById('profileAccess');
+
+            if (nameEl) nameEl.textContent = adminProfile.name;
+            if (emailEl) emailEl.textContent = adminProfile.email;
+            if (accessEl) accessEl.textContent = adminProfile.accessLevel;
+
+            // Update edit button
+            const editBtn = profilePage.querySelector('button[onclick*="toggleEditMode"]');
+            if (editBtn) {
+                editBtn.innerHTML = '<i class="fas fa-edit me-2"></i>Edit Profile';
+                editBtn.className = 'btn btn-primary';
+            }
+        }
+
+        function saveProfileChanges() {
+            const nameInput = document.getElementById('profileNameEdit');
+            const emailInput = document.getElementById('profileEmailEdit');
+            const accessInput = document.getElementById('profileAccessEdit');
+
+            // Get current values or use defaults
+            let name = 'Admin User';
+            let email = 'admin@civix.gov';
+            let access = 'System Administrator';
+
+            if (nameInput && nameInput.value.trim()) {
+                name = nameInput.value.trim();
+            }
+
+            if (emailInput && emailInput.value.trim()) {
+                email = emailInput.value.trim();
+            }
+
+            if (accessInput && accessInput.value.trim()) {
+                access = accessInput.value.trim();
+            }
+
+            // Update display
+            const nameEl = document.getElementById('profileName');
+            const emailEl = document.getElementById('profileEmail');
+            const accessEl = document.getElementById('profileAccess');
+
+            if (nameEl) nameEl.textContent = name;
+            if (emailEl) emailEl.textContent = email;
+            if (accessEl) accessEl.textContent = access;
+
+            // Save to localStorage
+            const adminData = { name, email, accessLevel: access };
+            localStorage.setItem('adminProfile', JSON.stringify(adminData));
+
+            alert('Profile updated successfully!');
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                localStorage.removeItem('civix_page');
+                localStorage.removeItem('currentRoleName');
+                localStorage.removeItem('currentEmail');
+                sessionStorage.clear();
+                fetch('/api/logout/', { method: 'POST', credentials: 'include' }).finally(() => {
+                    window.location.href = '/index.html?page=login';
+                });
+            }
+        }
+
+    </script>
+
+    <script src="/js/theme.js"></script>
+
+</body>
+
+</html>

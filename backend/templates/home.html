@@ -1,0 +1,1106 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Civix – Smart Street Issue Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' %}" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css' %}" rel="stylesheet">
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+    <link href="{% static 'css/theme.css' %}" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        /* ── NAVBAR ── */
+        .civix-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: #0d6efd;
+            color: white;
+            padding: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .civix-nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 68px;
+            padding: 0 30px;
+            max-width: 100%;
+        }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            letter-spacing: -0.5px;
+            margin-left: 0;
+        }
+
+        .logo-image {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-right: 8px;
+        }
+
+        .nav-logo .logo-civix {
+            color: white;
+        }
+        .nav-actions { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            margin-right: 0;
+        }
+        .btn-nav-login {
+            padding: 9px 24px;
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50px;
+            background: transparent;
+            color: white;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.25s;
+        }
+
+        .btn-nav-login:hover {
+            border-color: white;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-nav-start {
+            padding: 10px 26px;
+            border-radius: 50px;
+            background: white;
+            color: #0d6efd;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-decoration: none;
+            border: none;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+            transition: all 0.25s;
+        }
+        .btn-nav-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            color: #0a58ca;
+        }
+
+        .theme-toggle-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.25s;
+            color: white;
+        }
+
+        .theme-toggle-btn:hover {
+            border-color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .navbar-toggler-custom {
+            display: none;
+            background: none;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+                @media (max-width: 768px) {
+            .navbar-toggler-custom { display: flex; align-items: center; }
+            .nav-actions { display: none; flex-direction: column; gap: 8px; }
+            .nav-actions.open {
+                display: flex;
+                position: absolute;
+                top: 68px; left: 0; right: 0;
+                background: white;
+                padding: 16px 20px;
+                border-bottom: 1px solid #e2e8f0;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            }
+            .btn-nav-login, .btn-nav-start { width: 100%; text-align: center; }
+        }
+
+        /* ── HERO ── */
+       .hero-section {
+    min-height: 100vh;
+    background-image: url('img/petition.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    display: flex;
+    align-items: center;
+    padding-top: 88px;
+    padding-bottom: 60px;
+    position: relative;
+    overflow: hidden;
+    color: #ffffff;
+
+    /* 🔥 PERFECT BALANCE */
+    filter: brightness(1.25) contrast(1.1) saturate(1.1);
+}
+
+     .hero-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35); /* 🔥 THIS FIXES TEXT VISIBILITY */
+    z-index: 1;
+}
+.hero-section .container {
+    position: relative;
+    z-index: 2;
+}
+        .hero-section::after {
+            content: '';
+            position: absolute;
+            top: -120px; right: -120px;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 8px 20px;
+            border-radius: 50px;
+            margin-bottom: 2rem;
+            letter-spacing: 0.5px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .hero-badge .dot {
+            width: 7px; height: 7px;
+            background: #f97316;
+            border-radius: 50%;
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.4); }
+        }
+        .hero-title {
+    font-size: 4.2rem;
+    font-weight: 900;
+    line-height: 1.05;
+    color: #ffffff;
+    margin-bottom: 1.8rem;
+    letter-spacing: -2px;
+
+    /* 🔥 STRONG TEXT VISIBILITY */
+    text-shadow:
+        0 4px 20px rgba(0,0,0,0.9),
+        0 0 10px rgba(0,0,0,0.5);
+}
+        .hero-title .highlight {
+            color: #f97316;
+            position: relative;
+        }
+        .hero-title .highlight::after {
+            content: '';
+            position: absolute;
+            bottom: 2px; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #f97316, #fb923c);
+            border-radius: 2px;
+            opacity: 0.35;
+        }
+        .hero-subtitle {
+    font-size: 1.35rem;
+    color: rgba(255, 255, 255, 0.95);
+    line-height: 1.7;
+    margin-bottom: 3.2rem;
+    max-width: 700px;
+    font-weight: 400;
+
+    /* 🔥 CLEAR TEXT */
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+        .hero-btns { display: flex; gap: 14px; flex-wrap: wrap; }
+        .btn-primary-hero {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 18px 40px;
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            text-decoration: none;
+            border: none;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-primary-hero:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(37, 99, 235, 0.55);
+            color: white;
+        }
+        .btn-secondary-hero {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 18px 40px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+        .btn-secondary-hero:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        .hero-trust {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 2.5rem;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .hero-trust .avatars { display: flex; }
+        .hero-trust .avatars span {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            border: 2px solid white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            margin-left: -8px;
+        }
+        .hero-trust .avatars span:first-child { margin-left: 0; }
+
+        /* Hero illustration panel */
+        .hero-visual {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .hero-img-card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1), 0 4px 16px rgba(0,0,0,0.06);
+            overflow: hidden;
+            width: 100%;
+            max-width: 480px;
+        }
+        .hero-img-card img {
+            width: 100%; height: auto;
+            display: block;
+        }
+        .hero-float-badge {
+            position: absolute;
+            background: white;
+            border-radius: 14px;
+            padding: 10px 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #1e293b;
+            white-space: nowrap;
+        }
+        .hero-float-badge.badge-top {
+            top: 24px; left: -20px;
+        }
+        .hero-float-badge.badge-bottom {
+            bottom: 30px; right: -16px;
+        }
+        .badge-icon {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem;
+            color: white;
+        }
+
+        @media (max-width: 991px) {
+            .hero-title { font-size: 2.3rem; }
+            .hero-visual { margin-top: 3rem; }
+            .hero-float-badge.badge-top { left: 0; }
+            .hero-float-badge.badge-bottom { right: 0; }
+        }
+        @media (max-width: 576px) {
+            .hero-title { font-size: 1.85rem; letter-spacing: -0.5px; }
+            .hero-subtitle { font-size: 1rem; }
+            .btn-primary-hero, .btn-secondary-hero { padding: 12px 22px; font-size: 0.95rem; }
+        }
+
+        /* ── FEATURES ── */
+        .section-label {
+            display: inline-block;
+            background: #eff6ff;
+            color: #2563eb;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            padding: 5px 14px;
+            border-radius: 50px;
+            margin-bottom: 1rem;
+        }
+        .section-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+            margin-bottom: 0.75rem;
+        }
+        .section-sub { font-size: 1.05rem; color: #64748b; max-width: 520px; margin: 0 auto; }
+
+        .feature-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid #f1f5f9;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        .feature-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.1);
+            border-color: transparent;
+        }
+        .feature-icon {
+            width: 56px; height: 56px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem;
+            color: white;
+            margin-bottom: 1.2rem;
+        }
+        .feature-card h5 { font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; font-size: 1.05rem; }
+        .feature-card p { color: #64748b; font-size: 0.92rem; line-height: 1.6; margin: 0; }
+
+        /* ── STATS ── */
+        .stats-section { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+        .stat-item { text-align: center; padding: 1rem; }
+        .stat-item h3 { font-size: 2.6rem; font-weight: 900; color: #f97316; margin-bottom: 0.25rem; }
+        .stat-item p { color: #94a3b8; font-size: 0.95rem; margin: 0; }
+
+        /* ── HOW IT WORKS ── */
+        .step-card {
+            text-align: center;
+            padding: 2rem 1.5rem;
+            position: relative;
+        }
+        .step-number {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.2rem;
+            font-size: 1.3rem;
+            font-weight: 800;
+            box-shadow: 0 6px 18px rgba(37,99,235,0.3);
+        }
+        .step-card h5 { font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; }
+        .step-card p { color: #64748b; font-size: 0.9rem; }
+        .step-connector {
+            position: absolute;
+            top: 44px; right: -50%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #e2e8f0, transparent);
+        }
+
+        /* ── CTA ── */
+        .cta-section {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: -80px; right: -80px;
+            width: 300px; height: 300px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 50%;
+        }
+        .cta-section::after {
+            content: '';
+            position: absolute;
+            bottom: -60px; left: -60px;
+            width: 220px; height: 220px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 50%;
+        }
+        .btn-cta-white {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 32px;
+            background: white;
+            color: #f97316;
+            font-weight: 700;
+            font-size: 1rem;
+            border-radius: 50px;
+            text-decoration: none;
+            border: none;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            transition: all 0.28s;
+        }
+        .btn-cta-white:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(0,0,0,0.2); color: #ea580c; }
+
+        /* ── FOOTER ── */
+        .civix-footer { background: #0f172a; }
+        .footer-brand { font-size: 1.3rem; font-weight: 800; color: white; display: flex; align-items: center; gap: 10px; }
+        .footer-brand .logo-icon {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, #f97316, #fb923c);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 0.9rem;
+        }
+        .footer-link { color: #94a3b8; text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+        .footer-link:hover { color: #f97316; }
+        .social-icon {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            background: #1e293b;
+            display: inline-flex; align-items: center; justify-content: center;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+            font-size: 0.9rem;
+        }
+        .social-icon:hover { background: #f97316; color: white; transform: translateY(-3px) scale(1.15); box-shadow: 0 6px 16px rgba(249,115,22,0.4); }
+
+        /* ── HERO FLOAT ANIMATION ── */
+        @keyframes float-card {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+        }
+        .hero-img-card { animation: float-card 5s ease-in-out infinite; }
+
+        /* ── HERO BADGE ANIMATED ── */
+        @keyframes badge-glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+            }
+
+            50% {
+                box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        .hero-badge {
+            animation: badge-glow 2.5s ease-in-out infinite;
+        }
+
+        /* ── GRADIENT TEXT for Civix ── */
+        .hero-title .highlight {
+            background: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-title .highlight::after {
+            display: none;
+        }
+
+        /* ── BUTTON RIPPLE ── */
+        .btn-primary-hero, .btn-secondary-hero, .btn-cta-white, .btn-nav-start {
+            position: relative; overflow: hidden;
+        }
+        .btn-primary-hero::after, .btn-secondary-hero::after, .btn-cta-white::after, .btn-nav-start::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.18);
+            border-radius: inherit;
+            opacity: 0;
+            transform: scale(0.6);
+            transition: opacity 0.3s, transform 0.4s;
+        }
+        .btn-primary-hero:active::after, .btn-secondary-hero:active::after,
+        .btn-cta-white:active::after, .btn-nav-start:active::after {
+            opacity: 1; transform: scale(1.6);
+        }
+        .btn-primary-hero:hover {
+            box-shadow: 0 10px 28px rgba(37, 99, 235, 0.55), 0 0 0 4px rgba(37, 99, 235, 0.12);
+        }
+
+        /* ── FEATURE CARD ENHANCEMENTS ── */
+        .feature-card {
+            transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+            cursor: default;
+        }
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 48px rgba(0,0,0,0.12);
+            border-color: rgba(249,115,22,0.2);
+        }
+        .feature-card:hover .feature-icon {
+            transform: scale(1.15) rotate(-4deg);
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+        .feature-icon { transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+
+        /* SLA card pulse */
+        @keyframes sla-pulse {
+            0%, 100% { box-shadow: 0 2px 12px rgba(0,0,0,0.05), 0 0 0 0 rgba(16,185,129,0); }
+            50% { box-shadow: 0 2px 12px rgba(0,0,0,0.05), 0 0 0 8px rgba(16,185,129,0.1); }
+        }
+        .feature-card.sla-card { animation: sla-pulse 3s ease-in-out infinite; }
+        .feature-card.sla-card:hover { animation: none; border-color: rgba(16,185,129,0.4); box-shadow: 0 20px 48px rgba(16,185,129,0.15); }
+
+        /* ── STATS COUNTER GLOW ── */
+        .stat-item h3 {
+            text-shadow: 0 0 20px rgba(249,115,22,0.4);
+            transition: text-shadow 0.3s;
+        }
+        .stat-item:hover h3 { text-shadow: 0 0 32px rgba(249,115,22,0.7); }
+        .stat-item { transition: transform 0.3s; }
+        .stat-item:hover { transform: translateY(-4px); }
+
+        /* ── HOW IT WORKS STEP ENHANCEMENTS ── */
+        .step-number { transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s; }
+        .step-card:hover .step-number { transform: scale(1.15); }
+        @keyframes step3-pulse {
+            0%, 100% { box-shadow: 0 6px 18px rgba(249,115,22,0.3); }
+            50% { box-shadow: 0 6px 18px rgba(249,115,22,0.3), 0 0 0 10px rgba(249,115,22,0.1); }
+        }
+        .step-number.pulse-step { animation: step3-pulse 2.5s ease-in-out infinite; }
+
+        /* Step connector line */
+        .steps-wrapper { position: relative; }
+        .steps-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 44px; left: 12.5%; right: 12.5%;
+            height: 2px;
+            background: linear-gradient(90deg, #e2e8f0 0%, #f97316 50%, #e2e8f0 100%);
+            z-index: 0;
+        }
+        .step-card { position: relative; z-index: 1; }
+
+        /* ── SLA HIGHLIGHT SECTION ── */
+        .sla-highlight-section { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        .sla-step-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+            position: relative;
+            overflow: hidden;
+        }
+        .sla-step-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            opacity: 0;
+            transition: opacity 0.35s;
+        }
+        .sla-step-card:hover { transform: translateY(-6px); }
+        .sla-step-card:hover::before { opacity: 1; }
+        .sla-step-card.warn { border-color: rgba(251,191,36,0.3); }
+        .sla-step-card.warn::before { background: radial-gradient(circle at 50% 0%, rgba(251,191,36,0.08), transparent 70%); }
+        .sla-step-card.warn:hover { box-shadow: 0 16px 40px rgba(251,191,36,0.15); border-color: rgba(251,191,36,0.5); }
+        .sla-step-card.alert { border-color: rgba(239,68,68,0.3); }
+        .sla-step-card.alert::before { background: radial-gradient(circle at 50% 0%, rgba(239,68,68,0.08), transparent 70%); }
+        .sla-step-card.alert:hover { box-shadow: 0 16px 40px rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.5); }
+        .sla-step-card.escalate { border-color: rgba(249,115,22,0.3); }
+        .sla-step-card.escalate::before { background: radial-gradient(circle at 50% 0%, rgba(249,115,22,0.08), transparent 70%); }
+        .sla-step-card.escalate:hover { box-shadow: 0 16px 40px rgba(249,115,22,0.2); border-color: rgba(249,115,22,0.5); }
+        .sla-icon-ring {
+            width: 64px; height: 64px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.2rem;
+            font-size: 1.5rem;
+        }
+        .sla-progress-bar {
+            height: 8px;
+            border-radius: 50px;
+            background: rgba(255,255,255,0.08);
+            margin: 1rem 0 0.5rem;
+            overflow: hidden;
+        }
+        .sla-progress-fill {
+            height: 100%;
+            border-radius: 50px;
+            transition: width 1.5s cubic-bezier(0.4,0,0.2,1);
+        }
+        .sla-connector {
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,0.2);
+            font-size: 1.4rem;
+            padding-top: 1.5rem;
+        }
+        @keyframes warn-pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+        .sla-step-card.warn .sla-icon-ring { animation: warn-pulse 2s ease-in-out infinite; }
+
+        /* ── DARK MODE SMOOTH TRANSITION ── */
+        body, .civix-nav, .feature-card, .hero-section, .hero-img-card, .hero-float-badge {
+            transition: background 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        /* ── FOOTER LINK HOVER ── */
+        .footer-link { transition: color 0.2s, transform 0.2s; display: inline-block; }
+        .footer-link:hover { color: #f97316; transform: translateX(4px); }
+    </style>
+</head>
+<body>
+
+    <!-- ── NAVBAR ── -->
+    <nav class="civix-nav">
+        <div class="container">
+            <a class="nav-logo" href="/">
+                <img src="{% static 'img/logo.png' %}" alt="CIVIX" class="logo-image">
+                <span class="logo-civix">Civix</span>
+            </a>
+            <button class="navbar-toggler-custom" id="navToggle" aria-label="Toggle navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="nav-actions" id="navActions">
+                <a href="index.html?page=login" class="btn-nav-login">Login</a>
+                <a href="index.html?page=register" class="btn-nav-start">Get Started</a>
+                <a href="#" class="nav-link" onclick="toggleTheme()" id="themeToggleBtn" title="Toggle Light/Dark Mode">
+                    <i class="fas fa-moon"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── HERO ── -->
+    <section id="home" class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+
+                <!-- Center: Text -->
+                <div class="col-lg-8 mx-auto text-center" data-aos="fade-up" data-aos-duration="1000">
+                    <div class="hero-badge">
+                        <span class="dot"></span>
+                        ⚡ SLA Enabled Governance
+                    </div>
+                    <h1 class="hero-title">
+                        Smart Street Issue Management System
+                    </h1>
+                    <p class="hero-subtitle mx-auto">
+                        Report issues instantly. Track progress in real-time. Ensure accountability at every step.
+                    </p>
+                    <div class="hero-btns justify-content-center">
+                        <a href="index.html?page=register" class="btn-primary-hero">
+                            <i class="fas fa-rocket"></i> Get Started Now
+                        </a>
+                        <a href="#features" class="btn-secondary-hero">
+                            <i class="fas fa-play-circle"></i> Learn More
+                        </a>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ── FEATURES ── -->
+    <section id="features" class="py-5" style="background:#f8fafc;">
+        <div class="container py-4">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <span class="section-label">Features</span>
+                <h2 class="section-title">Everything you need to report &amp; resolve</h2>
+                <p class="section-sub">A complete civic platform built for citizens, authorities, and administrators.</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background:linear-gradient(135deg,#2563eb,#3b82f6);">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <h5>Location-Based Reporting</h5>
+                        <p>Pin exact street issues on a map. Auto-detect your location for faster, accurate submissions.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="150">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background:linear-gradient(135deg,#f97316,#fb923c);">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h5>Real-Time Tracking</h5>
+                        <p>Follow your complaint through every stage with live status updates and a detailed timeline.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="feature-card sla-card">
+                        <div class="feature-icon" style="background:linear-gradient(135deg,#10b981,#059669);">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h5>SLA Enforcement</h5>
+                        <p>Automated deadlines with priority-based escalation ensure no complaint is left unresolved.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="250">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h5>Secure &amp; Role-Based</h5>
+                        <p>Separate portals for citizens, authorities, and admins with multi-factor authentication.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background:linear-gradient(135deg,#ec4899,#f43f5e);">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <h5>Smart Notifications</h5>
+                        <p>Instant alerts on status changes, SLA breaches, and resolution confirmations.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="350">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <h5>Analytics Dashboard</h5>
+                        <p>Visual reports and insights for authorities to monitor performance and identify hotspots.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SMART ESCALATION HIGHLIGHT ── -->
+    <section class="sla-highlight-section py-5">
+        <div class="container py-4">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <span class="section-label" style="background:rgba(249,115,22,0.15);color:#fb923c;">Innovation</span>
+                <h2 class="section-title" style="color:#f8fafc;">Smart Escalation &amp; Accountability System</h2>
+                <p class="section-sub" style="color:#94a3b8;">Pressure-based governance — every complaint has a deadline. No authority can ignore it.</p>
+            </div>
+            <div class="row g-3 align-items-center justify-content-center">
+                <!-- 70% Warning -->
+                <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+                    <div class="sla-step-card warn">
+                        <div class="sla-icon-ring" style="background:rgba(251,191,36,0.15);">
+                            <span style="font-size:1.8rem;">⚠️</span>
+                        </div>
+                        <div style="color:#fbbf24;font-weight:800;font-size:1.1rem;margin-bottom:0.4rem;">70% SLA Used</div>
+                        <div style="color:#e2e8f0;font-size:0.9rem;line-height:1.5;">Deadline approaching! Authority is notified to act immediately.</div>
+                        <div class="sla-progress-bar">
+                            <div class="sla-progress-fill" style="width:70%;background:linear-gradient(90deg,#fbbf24,#f59e0b);"></div>
+                        </div>
+                        <div style="color:#94a3b8;font-size:0.78rem;">Warning threshold</div>
+                    </div>
+                </div>
+                <!-- Arrow -->
+                <div class="col-md-1 d-none d-md-flex sla-connector" data-aos="fade-up" data-aos-delay="150">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                <!-- 90% Alert -->
+                <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+                    <div class="sla-step-card alert">
+                        <div class="sla-icon-ring" style="background:rgba(239,68,68,0.15);">
+                            <span style="font-size:1.8rem;">🚨</span>
+                        </div>
+                        <div style="color:#f87171;font-weight:800;font-size:1.1rem;margin-bottom:0.4rem;">90% SLA Used</div>
+                        <div style="color:#e2e8f0;font-size:0.9rem;line-height:1.5;">Escalation risk! Senior authority alerted. Resolution window closing.</div>
+                        <div class="sla-progress-bar">
+                            <div class="sla-progress-fill" style="width:90%;background:linear-gradient(90deg,#ef4444,#dc2626);"></div>
+                        </div>
+                        <div style="color:#94a3b8;font-size:0.78rem;">Critical threshold</div>
+                    </div>
+                </div>
+                <!-- Arrow -->
+                <div class="col-md-1 d-none d-md-flex sla-connector" data-aos="fade-up" data-aos-delay="250">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+                <!-- 100% Auto Escalate -->
+                <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+                    <div class="sla-step-card escalate">
+                        <div class="sla-icon-ring" style="background:rgba(249,115,22,0.15);">
+                            <span style="font-size:1.8rem;">⚡</span>
+                        </div>
+                        <div style="color:#fb923c;font-weight:800;font-size:1.1rem;margin-bottom:0.4rem;">100% — Auto Escalate</div>
+                        <div style="color:#e2e8f0;font-size:0.9rem;line-height:1.5;">Complaint moves up: Ward → Municipality → District → State. Automatically.</div>
+                        <div class="sla-progress-bar">
+                            <div class="sla-progress-fill" style="width:100%;background:linear-gradient(90deg,#f97316,#fb923c);"></div>
+                        </div>
+                        <div style="color:#94a3b8;font-size:0.78rem;">Auto-escalation triggered</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Bottom tagline -->
+            <div class="text-center mt-5" data-aos="fade-up" data-aos-delay="350">
+                <div style="display:inline-flex;align-items:center;gap:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:50px;padding:10px 24px;">
+                    <span style="color:#10b981;font-size:1rem;">✔</span>
+                    <span style="color:#cbd5e1;font-size:0.9rem;font-weight:600;">Ward → Municipality → District → State &nbsp;|&nbsp; No complaint ignored. Ever.</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── STATS ── -->
+    <section class="stats-section py-5">
+        <div class="container py-3">
+            <div class="row g-4 text-center">
+                <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="100">
+                    <div class="stat-item">
+                        <div style="font-size:1.8rem;margin-bottom:0.4rem;">👥</div>
+                        <h3 class="stat-count" data-target="10000" data-suffix="K+">10K+</h3>
+                        <p>Active Citizens</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="200">
+                    <div class="stat-item">
+                        <div style="font-size:1.8rem;margin-bottom:0.4rem;">✅</div>
+                        <h3 class="stat-count" data-target="50000" data-suffix="K+">50K+</h3>
+                        <p>Issues Resolved</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="300">
+                    <div class="stat-item">
+                        <div style="font-size:1.8rem;margin-bottom:0.4rem;">⚡</div>
+                        <h3>&lt;24h</h3>
+                        <p>Avg. Resolution</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="400">
+                    <div class="stat-item">
+                        <div style="font-size:1.8rem;margin-bottom:0.4rem;">⭐</div>
+                        <h3>4.8★</h3>
+                        <p>Citizen Satisfaction</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── HOW IT WORKS ── -->
+    <section id="how-it-works" class="py-5" style="background:#fff;">
+        <div class="container py-4">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <span class="section-label" style="background:#f0fdf4;color:#16a34a;">How It Works</span>
+                <h2 class="section-title">Resolve issues in 4 simple steps</h2>
+                <p class="section-sub">From reporting to resolution — fast, transparent, and accountable.</p>
+            </div>
+            <div class="row g-0 justify-content-center steps-wrapper">
+                <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="100">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h5>Register</h5>
+                        <p>Create your free account in under a minute.</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="200">
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h5>Report</h5>
+                        <p>Submit your street issue with photos and location.</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="300">
+                    <div class="step-card">
+                        <div class="step-number pulse-step">3</div>
+                        <h5>Track</h5>
+                        <p>Monitor real-time progress and authority actions.</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="400">
+                    <div class="step-card">
+                        <div class="step-number" style="background:linear-gradient(135deg,#f97316,#fb923c);box-shadow:0 6px 18px rgba(249,115,22,0.3);">4</div>
+                        <h5>Resolved</h5>
+                        <p>Get notified when your issue is fixed. Rate the response.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── CTA ── -->
+    <section class="cta-section py-5">
+        <div class="container py-4 text-center position-relative" style="z-index:1;">
+            <div class="row justify-content-center" data-aos="zoom-in">
+                <div class="col-lg-7">
+                    <h2 class="text-white fw-800 mb-3" style="font-size:2.2rem;font-weight:800;letter-spacing:-0.5px;">
+                        Ready to make your streets better?
+                    </h2>
+                    <p class="text-white mb-4" style="opacity:0.88;font-size:1.05rem;">
+                        Join thousands of citizens already using Civix to report, track, and resolve street issues faster than ever.
+                    </p>
+                    <a href="index.html?page=register" class="btn-cta-white">
+                        <i class="fas fa-rocket"></i> Get Started — It's Free
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── FOOTER ── -->
+    <footer class="civix-footer py-5">
+        <div class="container">
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="footer-brand mb-3">
+                        <div class="logo-icon"><i class="fas fa-map-marker-alt"></i></div>
+                        <span>Civix</span>
+                    </div>
+                    <p style="color:#94a3b8;font-size:0.9rem;line-height:1.7;">
+                        Empowering citizens to report street issues and hold authorities accountable through smart technology.
+                    </p>
+                    <div class="d-flex gap-2 mt-3">
+                        <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2 offset-md-2">
+                    <p style="color:#e2e8f0;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:1rem;">Platform</p>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="#features" class="footer-link">Features</a>
+                        <a href="#how-it-works" class="footer-link">How It Works</a>
+                        <a href="index.html?page=login" class="footer-link">Login</a>
+                        <a href="index.html?page=register" class="footer-link">Register</a>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <p style="color:#e2e8f0;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:1rem;">Portals</p>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="index.html?page=login" class="footer-link">Citizen</a>
+                        <a href="index.html?page=login" class="footer-link">Authority</a>
+                        <a href="index.html?page=login" class="footer-link">Admin</a>
+                    </div>
+                </div>
+            </div>
+            <div style="border-top:1px solid #1e293b;padding-top:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                <p style="color:#475569;font-size:0.85rem;margin:0;">&copy; 2026 Civix. All rights reserved.</p>
+                <p style="color:#475569;font-size:0.85rem;margin:0;">Built for smarter governance.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js' %}"></script>
+    <script>
+        AOS.init({ duration: 750, once: true, offset: 60 });
+
+        // Mobile nav toggle
+        document.getElementById('navToggle').addEventListener('click', function() {
+            const nav = document.getElementById('navActions');
+            nav.classList.toggle('open');
+        });
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', function(e) {
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+            });
+        });
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const nav = document.querySelector('.civix-nav');
+            nav.style.boxShadow = window.scrollY > 40 ? '0 4px 24px rgba(0,0,0,0.08)' : 'none';
+        });
+
+        // Stat counter animation
+        function animateCounter(el) {
+            const target = parseInt(el.dataset.target);
+            const suffix = el.dataset.suffix || '';
+            const isK = target >= 1000;
+            const displayTarget = isK ? target / 1000 : target;
+            let start = 0;
+            const duration = 1800;
+            const step = 16;
+            const increment = displayTarget / (duration / step);
+            const timer = setInterval(() => {
+                start += increment;
+                if (start >= displayTarget) {
+                    el.textContent = displayTarget + suffix;
+                    clearInterval(timer);
+                } else {
+                    el.textContent = (isK ? Math.floor(start) : Math.floor(start)) + suffix;
+                }
+            }, step);
+        }
+
+        // Trigger counters when stats section enters viewport
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.querySelectorAll('.stat-count').forEach(animateCounter);
+                    statsObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.4 });
+        const statsSection = document.querySelector('.stats-section');
+        if (statsSection) statsObserver.observe(statsSection);
+
+        // Animate SLA progress bars when section enters viewport
+        const slaObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.querySelectorAll('.sla-progress-fill').forEach(bar => {
+                        const w = bar.style.width;
+                        bar.style.width = '0%';
+                        setTimeout(() => { bar.style.width = w; }, 200);
+                    });
+                    slaObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.3 });
+        const slaSection = document.querySelector('.sla-highlight-section');
+        if (slaSection) slaObserver.observe(slaSection);
+    </script>
+    <script src="{% static 'js/theme.js' %}"></script>
+</body>
+</html>

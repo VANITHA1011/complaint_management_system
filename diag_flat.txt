@@ -1,0 +1,21 @@
+--- Flat Diagnoses ---
+ID: 31 | Level: ward | Status: pending | Title: light broken
+ID: 30 | Level: ward | Status: pending | Title: Illegal dumping
+ID: 29 | Level: ward | Status: pending | Title: ffdg
+ID: 28 | Level: ward | Status: pending | Title: Drainage overflow issue
+ID: 27 | Level: ward | Status: pending | Title: power cut
+ID: 26 | Level: ward | Status: pending | Title: Broken street light
+ID: 25 | Level: ward | Status: pending | Title: power cut
+ID: 24 | Level: ward | Status: resolved | Title: Garbage Overflow Near Residential Area
+ID: 23 | Level: ward | Status: pending | Title: Garbage not collected
+ID: 22 | Level: ward | Status: resolved | Title: Road damaged after rain
+ID: 21 | Level: ward | Status: pending | Title: Illegal dumping
+ID: 20 | Level: municipality | Status: escalated | Title: power cut
+ID: 19 | Level: municipality | Status: escalated | Title: power cut
+ID: 18 | Level: ward | Status: resolved | Title: Drainage overflow issue
+ID: 17 | Level: ward | Status: resolved | Title: Garbage not collected
+ID: 16 | Level: municipality | Status: resolved | Title: Water leakage in street
+ID: 14 | Level: ward | Status: resolved | Title: Street light not working at Main Road
+ID: 13 | Level: state | Status: escalated | Title: Drainage overflow in residential area
+ID: 12 | Level: ward | Status: resolved | Title: Road damaged after rain
+ID: 11 | Level: ward | Status: resolved | Title: No water supply

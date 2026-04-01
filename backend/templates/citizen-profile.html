@@ -1,0 +1,538 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citizen Profile - CIVIX</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/theme.css' %}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js' %}"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js' %}"></script>
+
+    <style>
+        body {
+            background: var(--bg-body);
+            color: var(--text-primary);
+            font-family: "Segoe UI", sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .form-control {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .form-control:focus {
+            background: var(--bg-input);
+            border-color: var(--primary-color);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
+        }
+
+        .btn-outline-secondary {
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-outline-secondary:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .text-muted {
+            color: var(--text-secondary) !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .profile-shell-card {
+            border-radius: 16px;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .profile-shell-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .profile-header {
+            border-radius: 14px;
+            background: linear-gradient(135deg, #f8fbff, #edf4ff);
+            border: 1px solid rgba(13, 110, 253, 0.15);
+            padding: 20px;
+        }
+
+        .avatar-circle {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0d6efd, #4f8dfd);
+            color: #fff;
+            font-size: 1.9rem;
+            box-shadow: 0 8px 18px rgba(13, 110, 253, 0.35);
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .role-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            padding: 6px 12px;
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.35px;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            box-shadow: 0 6px 14px rgba(37, 99, 235, 0.25);
+        }
+
+        .profile-input {
+            border-radius: 12px;
+            height: 44px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+
+        .profile-input:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.17rem rgba(13, 110, 253, 0.18);
+        }
+
+        .system-meta {
+            font-size: 0.84rem;
+            color: var(--text-secondary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .stat-mini {
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            transition: transform 0.2s ease;
+        }
+
+        .stat-mini:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-mini h6 {
+            font-size: 0.75rem;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-secondary);
+        }
+
+        .stat-mini .num {
+            font-size: 1.35rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .stat-total .num { color: #2563eb; }
+        .stat-resolved .num { color: #16a34a; }
+        .stat-pending .num { color: #eab308; }
+        .stat-escalated .num { color: #dc2626; }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/app/">
+                <i class="fas fa-city me-2"></i>
+                CIVIX
+            </a>
+            
+            <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="menu">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html#citizenDashboard">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">
+                            <i class="fas fa-user-circle me-1"></i>Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="logout(); return false;">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="toggleTheme()" id="themeToggleBtn" title="Toggle Light/Dark Mode">
+                            <i class="fas fa-moon"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- PAGE CONTENT -->
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="mb-4 fade-in">My Profile</h2>
+            </div>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-7">
+                <div class="card profile-shell-card shadow-sm fade-in">
+                    <div class="card-body">
+                        <div class="profile-header text-center mb-4">
+                            <div class="avatar-circle">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <h4 id="profileHeaderName" class="mb-1 fw-bold">User Name</h4>
+                            <span id="profileHeaderRole" class="role-pill"><span>👤</span><span>CITIZEN</span></span>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Name</label>
+                                <input id="profileName" type="text" class="form-control profile-input" value="">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Email</label>
+                                <input id="profileEmail" type="email" class="form-control profile-input" value="">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Phone Number</label>
+                                <input id="profilePhone" type="text" class="form-control profile-input" value="">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">District</label>
+                                <input id="profileDistrict" type="text" class="form-control profile-input" value="">
+                            </div>
+                        </div>
+
+                        <div class="mt-4 mb-3">
+                            <div class="system-meta"><strong>User ID:</strong> <span id="profileUserId">-</span></div>
+                            <div class="system-meta"><strong>Joined Date:</strong> <span id="profileJoinedDate">-</span></div>
+                            <div class="system-meta"><strong>Last Login:</strong> <span id="profileLastLogin">-</span></div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="stats-grid">
+                                <div class="stat-mini stat-total">
+                                    <h6>Total Complaints</h6>
+                                    <div id="profileStatTotal" class="num">0</div>
+                                </div>
+                                <div class="stat-mini stat-resolved">
+                                    <h6>Resolved</h6>
+                                    <div id="profileStatResolved" class="num">0</div>
+                                </div>
+                                <div class="stat-mini stat-pending">
+                                    <h6>Pending</h6>
+                                    <div id="profileStatPending" class="num">0</div>
+                                </div>
+                                <div class="stat-mini stat-escalated">
+                                    <h6>Escalated</h6>
+                                    <div id="profileStatEscalated" class="num">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="btn btn-outline-secondary" onclick="goToDashboard()">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </button>
+                            <button class="btn btn-success" onclick="saveProfileChanges()">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                            <button class="btn btn-danger" onclick="logout()">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </button>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-outline-primary" onclick="showNotification('Change Password feature coming soon.', 'info')">
+                                <i class="fas fa-key me-2"></i>Change Password
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js' %}"></script>
+    <script src="{% static 'js/app.js' %}"></script>
+    <script src="{% static 'js/theme.js' %}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize AOS animations
+            if (typeof AOS !== 'undefined') {
+                AOS.init({
+                    duration: 800,
+                    once: true,
+                    offset: 50
+                });
+            }
+
+            // Load profile data
+            loadProfileData();
+        });
+
+        function loadProfileData() {
+            // Get current user data
+            let currentUser = null;
+            try {
+                const stored = localStorage.getItem('currentUser');
+                if (stored) {
+                    currentUser = JSON.parse(stored);
+                }
+                if (!currentUser) {
+                    const fallback = localStorage.getItem('user');
+                    if (fallback) currentUser = JSON.parse(fallback);
+                }
+            } catch (e) {
+                console.error("Error loading user data", e);
+            }
+
+            // If no user data, create demo user
+            if (!currentUser) {
+                currentUser = {
+                    id: 'user1',
+                    email: 'demo@gmail.com',
+                    name: 'Demo User',
+                    role: 'citizen',
+                    district: 'central',
+                    phone: '+91 98765 43210',
+                    joinedAt: new Date().toISOString(),
+                    loginTime: new Date().toISOString()
+                };
+            }
+
+            // Update profile display
+            const headerNameEl = document.getElementById('profileHeaderName');
+            const headerRoleEl = document.getElementById('profileHeaderRole');
+            const nameEl = document.getElementById('profileName');
+            const emailEl = document.getElementById('profileEmail');
+            const phoneEl = document.getElementById('profilePhone');
+            const districtEl = document.getElementById('profileDistrict');
+            const userIdEl = document.getElementById('profileUserId');
+            const joinedDateEl = document.getElementById('profileJoinedDate');
+            const lastLoginEl = document.getElementById('profileLastLogin');
+            
+            if (headerNameEl) headerNameEl.textContent = currentUser.name || 'User Name';
+            if (nameEl) nameEl.value = currentUser.name || '';
+            if (emailEl) emailEl.value = currentUser.email || '';
+            if (phoneEl) phoneEl.value = currentUser.phone || '';
+            if (districtEl) districtEl.value = currentUser.district || '';
+            
+            if (headerRoleEl) {
+                const roleText = (currentUser.role || 'citizen').toUpperCase();
+                headerRoleEl.innerHTML = `<span>👤</span><span>${roleText}</span>`;
+            }
+
+            const userId = String(currentUser.id || '1023').replace(/\D/g, '') || '1023';
+            if (userIdEl) userIdEl.textContent = `CIVIX${userId.padStart(4, '0')}`;
+
+            const joinedDate = currentUser.joinedAt ? new Date(currentUser.joinedAt) : new Date();
+            const lastLogin = currentUser.loginTime ? new Date(currentUser.loginTime) : new Date();
+            if (joinedDateEl) joinedDateEl.textContent = joinedDate.toLocaleDateString();
+            if (lastLoginEl) lastLoginEl.textContent = lastLogin.toLocaleString();
+
+            loadActivityStats(currentUser);
+        }
+
+        function loadActivityStats(currentUser) {
+            let complaints = [];
+            try {
+                fetch('http://127.0.0.1:8000/api/complaints/list/?level=all')
+                    .then(r => r.json())
+                    .then(json => {
+                        const all = (json.success && Array.isArray(json.complaints)) ? json.complaints : [];
+                        const uid = currentUser && currentUser.id ? String(currentUser.id) : null;
+                        const filtered = uid ? all.filter(c => String(c.citizen_id) === uid) : all;
+                        const total = filtered.length;
+                        const resolved = filtered.filter(c => c.status === 'resolved').length;
+                        const pending = filtered.filter(c => c.status === 'pending').length;
+                        const escalated = filtered.filter(c => c.status === 'escalated').length;
+                        const totalEl = document.getElementById('profileStatTotal');
+                        const resolvedEl = document.getElementById('profileStatResolved');
+                        const pendingEl = document.getElementById('profileStatPending');
+                        const escalatedEl = document.getElementById('profileStatEscalated');
+                        if (totalEl) totalEl.textContent = String(total);
+                        if (resolvedEl) resolvedEl.textContent = String(resolved);
+                        if (pendingEl) pendingEl.textContent = String(pending);
+                        if (escalatedEl) escalatedEl.textContent = String(escalated);
+                    }).catch(() => {});
+                return; // stats loaded async above
+            } catch(e) {
+                complaints = [];
+            }
+
+            const userId = currentUser && currentUser.id ? String(currentUser.id) : '';
+            const userEmail = currentUser && currentUser.email ? String(currentUser.email).toLowerCase() : '';
+
+            let userComplaints = complaints.filter(c => {
+                const cid = c.userId ? String(c.userId) : '';
+                const cemail = c.email ? String(c.email).toLowerCase() : '';
+                return (userId && cid === userId) || (userEmail && cemail === userEmail);
+            });
+
+            if (userComplaints.length === 0) {
+                userComplaints = complaints;
+            }
+
+            const total = userComplaints.length;
+            const resolved = userComplaints.filter(c => String(c.status).toLowerCase() === 'resolved').length;
+            const pending = userComplaints.filter(c => String(c.status).toLowerCase() === 'pending').length;
+            const escalated = userComplaints.filter(c => String(c.status).toLowerCase() === 'escalated').length;
+
+            const totalEl = document.getElementById('profileStatTotal');
+            const resolvedEl = document.getElementById('profileStatResolved');
+            const pendingEl = document.getElementById('profileStatPending');
+            const escalatedEl = document.getElementById('profileStatEscalated');
+
+            if (totalEl) totalEl.textContent = String(total);
+            if (resolvedEl) resolvedEl.textContent = String(resolved);
+            if (pendingEl) pendingEl.textContent = String(pending);
+            if (escalatedEl) escalatedEl.textContent = String(escalated);
+        }
+
+        function saveProfileChanges() {
+            const nameInput = document.getElementById('profileName');
+            const emailInput = document.getElementById('profileEmail');
+            const phoneInput = document.getElementById('profilePhone');
+            const districtInput = document.getElementById('profileDistrict');
+            
+            // Get current user data
+            let currentUser = null;
+            try {
+                const stored = localStorage.getItem('currentUser');
+                if (stored) {
+                    currentUser = JSON.parse(stored);
+                }
+                if (!currentUser) {
+                    const fallback = localStorage.getItem('user');
+                    if (fallback) currentUser = JSON.parse(fallback);
+                }
+            } catch (e) {
+                console.error("Error loading user data", e);
+            }
+
+            if (!currentUser) {
+                currentUser = {
+                    id: 'user1',
+                    role: 'citizen',
+                    district: 'central'
+                };
+            }
+            
+            // Update user data
+            if (nameInput && nameInput.value.trim()) {
+                currentUser.name = nameInput.value.trim();
+            }
+            
+            if (emailInput && emailInput.value.trim()) {
+                currentUser.email = emailInput.value.trim();
+            }
+
+            if (phoneInput) {
+                currentUser.phone = phoneInput.value.trim();
+            }
+
+            if (districtInput) {
+                currentUser.district = districtInput.value.trim();
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            localStorage.setItem('user', JSON.stringify(currentUser));
+            
+            // Show success message
+            showNotification('Profile updated successfully!', 'success');
+            loadProfileData();
+        }
+
+        function goToDashboard() {
+            window.location.href = 'index.html#citizenDashboard';
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                localStorage.removeItem('isLoggedIn');
+                window.location.href = '/app/';
+            }
+        }
+
+        function showNotification(message, type) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+            notification.style.zIndex = '9999';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>

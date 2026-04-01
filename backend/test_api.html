@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>Complaint API Test</h1>
+    <button onclick="testAPI()">Test API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const url = 'http://127.0.0.1:8000/api/complaints/list/?level=all&_t=' + Date.now();
+            console.log('Fetching:', url);
+            
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                
+                console.log('API Response:', json);
+                
+                // Find complaints 59 and 1
+                const complaint59 = json.complaints.find(c => c.id == 59);
+                const complaint1 = json.complaints.find(c => c.id == 1);
+                
+                document.getElementById('result').innerHTML = `
+                    <h3>Complaint 59:</h3>
+                    <p>Level: ${complaint59?.current_level}</p>
+                    <p>Status: ${complaint59?.status}</p>
+                    
+                    <h3>Complaint 1:</h3>
+                    <p>Level: ${complaint1?.current_level}</p>
+                    <p>Status: ${complaint1?.status}</p>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

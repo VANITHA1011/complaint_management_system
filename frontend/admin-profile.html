@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Profile - CIVIX</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/theme.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            background: var(--bg-body);
+            color: var(--text-primary);
+            font-family: "Segoe UI", sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .form-control {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .form-control:focus {
+            background: var(--bg-input);
+            border-color: var(--primary-color);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
+        }
+
+        .btn-outline-secondary {
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-outline-secondary:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .text-muted {
+            color: var(--text-secondary) !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/admin-dashboard.html">
+                <i class="fas fa-user-shield me-2"></i>
+                CIVIX Admin
+            </a>
+            
+            <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="menu">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin-dashboard.html">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">
+                            <i class="fas fa-user-circle me-1"></i>Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="logout(); return false;">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="toggleTheme()" id="themeToggleBtn" title="Toggle Light/Dark Mode">
+                            <i class="fas fa-moon"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- PAGE CONTENT -->
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="mb-4 fade-in">My Profile</h2>
+            </div>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-sm fade-in">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Name</label>
+                            <div id="profileName" class="fw-semibold">Admin User</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Email</label>
+                            <div id="profileEmail" class="fw-semibold">admin@civix.gov</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Role</label>
+                            <div id="profileRole" class="badge bg-danger">Admin</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Access Level</label>
+                            <div id="profileAccess" class="fw-semibold">System Administrator</div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary" onclick="goToDashboard()">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </button>
+                            <button class="btn btn-primary" onclick="toggleEditMode()">
+                                <i class="fas fa-edit me-2"></i>Edit Profile
+                            </button>
+                            <button class="btn btn-danger" onclick="logout()">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/theme.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load profile data
+            loadProfileData();
+        });
+
+        function loadProfileData() {
+            // Get admin profile data from localStorage
+            let adminProfile = {
+                name: 'Admin User',
+                email: 'admin@civix.gov',
+                accessLevel: 'System Administrator'
+            };
+
+            try {
+                const storedProfile = localStorage.getItem('adminProfile');
+                if (storedProfile) {
+                    adminProfile = JSON.parse(storedProfile);
+                }
+            } catch (e) {
+                console.error("Error loading admin profile", e);
+            }
+
+            // Update profile display
+            const nameEl = document.getElementById('profileName');
+            const emailEl = document.getElementById('profileEmail');
+            const accessEl = document.getElementById('profileAccess');
+            
+            if (nameEl) nameEl.textContent = adminProfile.name;
+            if (emailEl) emailEl.textContent = adminProfile.email;
+            if (accessEl) accessEl.textContent = adminProfile.accessLevel;
+        }
+
+        function toggleEditMode() {
+            const profileCard = document.querySelector('.card-body');
+            if (!profileCard) return;
+            
+            const isEditMode = profileCard.dataset.editMode === 'true';
+            
+            if (isEditMode) {
+                saveProfileChanges();
+                exitEditMode();
+            } else {
+                enterEditMode();
+            }
+        }
+
+        function enterEditMode() {
+            const profileCard = document.querySelector('.card-body');
+            if (!profileCard) return;
+            
+            profileCard.dataset.editMode = 'true';
+            
+            // Convert display fields to editable inputs
+            const nameEl = document.getElementById('profileName');
+            const emailEl = document.getElementById('profileEmail');
+            const accessEl = document.getElementById('profileAccess');
+            
+            if (nameEl) {
+                const currentName = nameEl.textContent;
+                nameEl.innerHTML = `<input type="text" class="form-control" id="profileNameEdit" value="${currentName}" />`;
+            }
+            
+            if (emailEl) {
+                const currentEmail = emailEl.textContent;
+                emailEl.innerHTML = `<input type="email" class="form-control" id="profileEmailEdit" value="${currentEmail}" />`;
+            }
+            
+            if (accessEl) {
+                const currentAccess = accessEl.textContent;
+                accessEl.innerHTML = `<input type="text" class="form-control" id="profileAccessEdit" value="${currentAccess}" />`;
+            }
+            
+            // Update edit button
+            const editBtn = profileCard.querySelector('button[onclick*="toggleEditMode"]');
+            if (editBtn) {
+                editBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
+                editBtn.className = 'btn btn-success';
+            }
+        }
+
+        function exitEditMode() {
+            const profileCard = document.querySelector('.card-body');
+            if (!profileCard) return;
+            
+            profileCard.dataset.editMode = 'false';
+            
+            // Restore display fields
+            loadProfileData();
+            
+            // Update edit button
+            const editBtn = profileCard.querySelector('button[onclick*="toggleEditMode"]');
+            if (editBtn) {
+                editBtn.innerHTML = '<i class="fas fa-edit me-2"></i>Edit Profile';
+                editBtn.className = 'btn btn-primary';
+            }
+        }
+
+        function saveProfileChanges() {
+            const nameInput = document.getElementById('profileNameEdit');
+            const emailInput = document.getElementById('profileEmailEdit');
+            const accessInput = document.getElementById('profileAccessEdit');
+            
+            // Get current values or use defaults
+            let name = 'Admin User';
+            let email = 'admin@civix.gov';
+            let access = 'System Administrator';
+            
+            if (nameInput && nameInput.value.trim()) {
+                name = nameInput.value.trim();
+            }
+            
+            if (emailInput && emailInput.value.trim()) {
+                email = emailInput.value.trim();
+            }
+            
+            if (accessInput && accessInput.value.trim()) {
+                access = accessInput.value.trim();
+            }
+            
+            // Save to localStorage
+            const adminData = { name, email, accessLevel: access };
+            localStorage.setItem('adminProfile', JSON.stringify(adminData));
+            
+            // Show success message
+            showNotification('Profile updated successfully!', 'success');
+        }
+
+        function goToDashboard() {
+            window.location.href = '/';
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem("currentUser");
+                localStorage.removeItem("user");
+                localStorage.removeItem("token");
+                localStorage.removeItem("civix_page");
+                localStorage.removeItem("currentRoleName");
+                localStorage.removeItem("currentEmail");
+                sessionStorage.clear();
+                fetch('/api/logout/', { method: 'POST', credentials: 'include' }).finally(() => {
+                    window.location.href = '/index.html?page=login';
+                });
+            }
+        }
+
+        function showNotification(message, type) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+            notification.style.zIndex = '9999';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>

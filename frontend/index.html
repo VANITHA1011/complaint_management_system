@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CIVIX - Intelligent Complaint Management System</title>
+    <link rel="icon" href="/img/logo.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link href="/css/styles.css?v=${new Date().getTime()}" rel="stylesheet" id="dynamicStyleLink">
+    <link href="/css/theme.css" rel="stylesheet">
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script>
+        // Force cache refresh for styles
+        document.getElementById('dynamicStyleLink').href = 'css/styles.css?v=' + new Date().getTime();
+    </script>
+    <style>
+        .navbar-brand-civix {
+            font-weight: 800;
+            font-size: 1.15rem;
+            letter-spacing: 1.6px;
+            line-height: 1;
+        }
+
+        .navbar-logo {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        /* Authority Level Field Animation */
+        #authorityLevelRow {
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .invalid-feedback {
+            display: none;
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .form-select.is-invalid {
+            border-color: #dc3545;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-lg">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fw-bold d-inline-flex align-items-center" href="/home.html">
+                <img src="/img/logo.png" alt="CIVIX" class="navbar-logo me-2">
+                <span class="navbar-brand-civix">CIVIX</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/home.html">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item d-none" id="navDashboardItem">
+                        <a class="nav-link" href="#" id="navDashboardLink" onclick="goToDashboard()">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item d-none" id="navLogoutItem">
+                        <a class="nav-link text-danger fw-bold" href="#" onclick="logout()">
+                            <i class="fas fa-sign-out-alt me-1"></i>Logout
+                        </a>
+                    </li>
+                    <li class="nav-item d-none" id="navProfileItem">
+                        <a class="nav-link fw-semibold" href="#" onclick="showPage('profilePage')">
+                            <i class="fas fa-user-circle me-1"></i>Profile
+                        </a>
+                    </li>
+                    <li class="nav-item" id="navLoginItem">
+                        <a class="nav-link" href="#" onclick="showPage('login')">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="#" onclick="toggleNotifications()">
+                            <i class="fas fa-bell"></i>
+                            <span id="notificationCount" class="position-absolute translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; top: 10px; left: 80%;">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="toggleTheme()" id="themeToggleBtn"
+                            title="Toggle Light/Dark Mode">
+                            <i class="fas fa-moon"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Notification Panel -->
+    <div id="notificationPanel" class="notification-panel" style="display: none;">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Notifications</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearAllNotifications()">Clear All</button>
+            </div>
+            <div class="card-body" id="notificationList">
+                <!-- Notifications will be added here dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container-fluid p-0">
+        <!-- Login Page -->
+        <div id="loginPage" class="page-content px-3">
+            <div class="row justify-content-center align-items-center" style="min-height: calc(100vh - 76px);">
+                <div class="col-md-6 col-lg-4">
+                    <div class="card shadow-lg border-0" style="border-radius: 20px;">
+                        <div class="card-body p-4">
+                            <div class="text-center mb-3">
+                                <img src="/img/logo.png" alt="CIVIX" class="auth-logo"
+                                    style="max-height: 80px; width: auto; margin-bottom: 10px;">
+                                <h4 class="card-title fw-bold mb-1">Welcome Back</h4>
+                                <p class="text-muted small mb-0">Sign in to your account</p>
+                            </div>
+                            <form id="loginForm">
+                                <div class="mb-3">
+                                    <label for="loginEmail" class="form-label fw-semibold small">
+                                        <i class="fas fa-envelope me-2 text-muted"></i>Email Address
+                                    </label>
+                                    <input type="email" class="form-control" id="loginEmail"
+                                        placeholder="Enter your email">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="loginPassword" class="form-label fw-semibold small">
+                                        <i class="fas fa-lock me-2 text-muted"></i>Password
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="loginPassword"
+                                            placeholder="Enter your password">
+                                        <button class="btn btn-outline-secondary" type="button"
+                                            onclick="togglePassword('loginPassword')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="password-strength-container mt-1" id="loginPasswordStrength">
+                                        <div class="password-strength-meter">
+                                            <div id="loginPasswordMeter"></div>
+                                        </div>
+                                        <div class="password-strength-text small" id="loginPasswordText"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="rememberMe">
+                                    <label class="form-check-label small" for="rememberMe">
+                                        Remember me for 30 days
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 mb-3 fw-semibold">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                                </button>
+
+                                <div class="d-flex align-items-center mb-3">
+                                    <hr class="flex-grow-1 text-muted m-0" style="opacity: 0.2;">
+                                    <span class="mx-3 text-muted small">or</span>
+                                    <hr class="flex-grow-1 text-muted m-0" style="opacity: 0.2;">
+                                </div>
+
+                                <!-- Google Sign In Button -->
+                                <button type="button" onclick="googleAuth.login()"
+                                    class="btn border rounded w-100 mb-4 bg-white position-relative shadow-sm"
+                                    style="border-color: #d2d6dc !important; padding: 8px;">
+                                    <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg"
+                                        style="position:absolute; left:12px; top:50%; transform:translateY(-50%); width:18px;">
+                                    <span style="color:#4b5563;">Sign in with Google</span>
+                                </button>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="#" onclick="showPage('forgotPassword')"
+                                        class="text-decoration-none small text-primary fw-semibold">
+                                        <i class="fas fa-question-circle me-1"></i>Forgot password?
+                                    </a>
+                                    <a href="#" onclick="showPage('register')"
+                                        class="text-decoration-none small text-primary fw-semibold">
+                                        <i class="fas fa-user-plus me-1"></i>Create account
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registration Page -->
+        <div id="registerPage" class="page-content" style="display: none;">
+            <div class="row justify-content-center align-items-center" style="min-height: calc(100vh - 76px);">
+                <div class="col-md-8 col-lg-6">
+                    <div class="card shadow-lg border-0" style="border-radius: 20px;">
+                        <div class="card-body p-4">
+                            <div class="text-center mb-3">
+                                <img src="/img/logo.png" alt="CIVIX" class="auth-logo"
+                                    style="max-height: 80px; width: auto; margin-bottom: 10px;">
+                                <h4 class="fw-bold mb-1">Create Account</h4>
+                                <p class="text-muted small">Join us to make your voice heard</p>
+                            </div>
+                            <form id="registerForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <label for="firstName" class="form-label fw-semibold small">
+                                            <i class="fas fa-user me-2 text-muted"></i>First Name
+                                        </label>
+                                        <input type="text" class="form-control" id="firstName" placeholder="John"
+                                            required>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label for="lastName" class="form-label fw-semibold small">
+                                            <i class="fas fa-user me-2 text-muted"></i>Last Name
+                                        </label>
+                                        <input type="text" class="form-control" id="lastName" placeholder="Doe"
+                                            required>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label for="registerEmail" class="form-label fw-semibold small">
+                                        <i class="fas fa-envelope me-2 text-muted"></i>Email Address
+                                    </label>
+                                    <input type="email" class="form-control" id="registerEmail"
+                                        placeholder="john.doe@example.com" required>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <label for="registerPassword" class="form-label fw-semibold small">
+                                            <i class="fas fa-lock me-2 text-muted"></i>Password
+                                        </label>
+                                        <input type="password" class="form-control" id="registerPassword"
+                                            placeholder="Min. 6 characters" required>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label for="confirmPassword" class="form-label fw-semibold small">
+                                            <i class="fas fa-lock me-2 text-muted"></i>Confirm Password
+                                        </label>
+                                        <input type="password" class="form-control" id="confirmPassword"
+                                            placeholder="Re-enter password" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <label for="userRole" class="form-label fw-semibold small">
+                                            <i class="fas fa-user-tag me-2 text-muted"></i>Role
+                                        </label>
+                                        <select class="form-select" id="userRole" required>
+                                            <option value="">Select your role</option>
+                                            <option value="citizen">👤 Citizen</option>
+                                            <option value="authority">🏛️ Authority</option>
+                                            <option value="admin">⚙️ Admin</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label for="phone" class="form-label fw-semibold small">
+                                            <i class="fas fa-phone me-2 text-muted"></i>Phone Number
+                                        </label>
+                                        <input type="tel" class="form-control" id="phone"
+                                            placeholder="Enter 10-digit mobile number" maxlength="10"
+                                            pattern="[0-9]{10}" inputmode="numeric" required>
+                                    </div>
+                                </div>
+                                <div class="row" id="authorityLevelRow" style="display: none;">
+                                    <div class="col-md-6 mb-2">
+                                        <label for="authorityLevel" class="form-label fw-semibold small">
+                                            <i class="fas fa-shield-alt me-2 text-muted"></i>Select Authority Level
+                                        </label>
+                                        <select class="form-select" id="authorityLevel">
+                                            <option value="">Select authority level</option>
+                                            <option value="ward">🏘️ Ward Officer</option>
+                                            <option value="municipality">🏛️ Municipality Officer</option>
+                                            <option value="district">🌆 District Officer</option>
+                                            <option value="state">🏢 State Officer</option>
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            Please select an authority level
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="district" class="form-label fw-semibold small">
+                                        <i class="fas fa-map-marker-alt me-2 text-muted"></i>District
+                                    </label>
+                                    <select class="form-select" id="district" required>
+                                        <option value="">Select your district</option>
+                                        <option value="central">🏢 Central District</option>
+                                        <option value="north">🌟 North District</option>
+                                        <option value="south">🌴 South District</option>
+                                        <option value="east">🌅 East District</option>
+                                        <option value="west">🌇 West District</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="agreeTerms" required>
+                                    <label class="form-check-label small" for="agreeTerms">
+                                        I agree to the <a href="#" class="text-primary text-decoration-none">Terms of
+                                            Service</a> and <a href="#"
+                                            class="text-primary text-decoration-none">Privacy Policy</a>
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 mb-3 fw-semibold">
+                                    <i class="fas fa-user-plus me-2"></i>Create Account
+                                </button>
+                                <div class="text-center">
+                                    <a href="#" onclick="showPage('login')"
+                                        class="text-decoration-none small text-primary fw-semibold">
+                                        <i class="fas fa-arrow-left me-1"></i>Already have an account? Sign in
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OTP Verification Page -->
+        <div id="otpPage" class="page-content" style="display: none;">
+            <div class="row justify-content-center align-items-center" style="min-height: calc(100vh - 76px);">
+                <div class="col-md-6 col-lg-4">
+                    <div class="card shadow-lg border-0" style="border-radius: 20px;">
+                        <div class="card-body p-5">
+                            <div class="text-center mb-4">
+                                <div class="mb-3">
+                                    <i class="fas fa-shield-check fa-3x text-primary"></i>
+                                </div>
+                                <h3 class="card-title fw-bold">Verify Your Email</h3>
+                                <p class="text-muted">Enter the 6-digit code sent to your email</p>
+                            </div>
+                            <form id="otpForm">
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <input type="text" class="form-control otp-input" maxlength="1" required>
+                                        <input type="text" class="form-control otp-input" maxlength="1" required>
+                                        <input type="text" class="form-control otp-input" maxlength="1" required>
+                                        <input type="text" class="form-control otp-input" maxlength="1" required>
+                                        <input type="text" class="form-control otp-input" maxlength="1" required>
+                                        <input type="text" class="form-control otp-input" maxlength="1" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-lg w-100 mb-3 fw-semibold">
+                                    <i class="fas fa-check-circle me-2"></i>Verify Code
+                                </button>
+                                <div class="text-center">
+                                    <p class="text-muted mb-2">Didn't receive the code?</p>
+                                    <a href="#" onclick="resendOTP()" class="text-decoration-none">
+                                        <i class="fas fa-redo me-1"></i>Resend OTP
+                                    </a>
+                                </div>
+                                <hr class="my-4">
+                                <div class="text-center">
+                                    <a href="#" onclick="showPage('login')" class="text-decoration-none">
+                                        <i class="fas fa-arrow-left me-1"></i>Back to Login
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Page -->
+        <div id="forgotPasswordPage" class="page-content" style="display: none;">
+            <div class="row justify-content-center align-items-center" style="min-height: calc(100vh - 76px);">
+                <div class="col-md-6 col-lg-4">
+                    <div class="card shadow-lg border-0" style="border-radius: 20px;">
+                        <div class="card-body p-5">
+                            <div class="text-center mb-4">
+                                <div class="mb-3">
+                                    <i class="fas fa-key fa-3x text-primary"></i>
+                                </div>
+                                <h3 class="card-title fw-bold">Reset Password</h3>
+                                <p class="text-muted">Enter your email to receive a reset link</p>
+                            </div>
+                            <form id="forgotPasswordForm">
+                                <div class="mb-4">
+                                    <label for="resetEmail" class="form-label fw-semibold">
+                                        <i class="fas fa-envelope me-2 text-muted"></i>Email Address
+                                    </label>
+                                    <input type="email" class="form-control form-control-lg" id="resetEmail"
+                                        placeholder="Enter your email" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-lg w-100 mb-3 fw-semibold">
+                                    <i class="fas fa-paper-plane me-2"></i>Send Reset Link
+                                </button>
+                                <div class="text-center">
+                                    <a href="#" onclick="showPage('login')" class="text-decoration-none">
+                                        <i class="fas fa-arrow-left me-1"></i>Back to Login
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Citizen Dashboard -->
+        <div id="citizenDashboard" class="page-content px-4 py-3">
+            <!-- Public Visibility Warnings -->
+            <div id="publicAlerts" style="display: none;"></div>
+
+            <!-- Dashboard Title Area -->
+            <div class="row mb-4">
+                <div class="col-12 dashboard-header fade-in">
+                    <h2 class="fw-bold text-gray-800">Citizen Dashboard</h2>
+                    <p class="text-muted">Welcome back! Here's an overview of your complaints.</p>
+                </div>
+            </div>
+
+            <!-- Modern Statistics Cards -->
+            <div class="row row-cols-1 row-cols-md-3 row-cols-lg-5 g-4 mb-5">
+                <!-- Total Complaints -->
+                <div class="col">
+                    <div class="stat-card stat-blue fade-in" style="animation-delay: 0.1s;">
+                        <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+                        <div class="stat-info">
+                            <h5 class="stat-title">Total</h5>
+                            <h2 class="stat-value" id="totalComplaints">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <!-- Pending -->
+                <div class="col">
+                    <div class="stat-card stat-orange fade-in" style="animation-delay: 0.2s;">
+                        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                        <div class="stat-info">
+                            <h5 class="stat-title">Pending</h5>
+                            <h2 class="stat-value" id="pendingComplaints">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <!-- In Progress -->
+                <div class="col">
+                    <div class="stat-card stat-purple fade-in" style="animation-delay: 0.3s;">
+                        <div class="stat-icon"><i class="fas fa-spinner fa-spin-hover"></i></div>
+                        <div class="stat-info">
+                            <h5 class="stat-title">In Progress</h5>
+                            <h2 class="stat-value" id="inProgressComplaints">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <!-- Escalated -->
+                <div class="col">
+                    <div class="stat-card fade-in"
+                        style="animation-delay: 0.35s; border-top: 4px solid #ef4444; background: linear-gradient(135deg, #fef2f2, #ffffff);">
+                        <div class="stat-icon" style="background-color: #fecaca; color: #dc2626;"><i
+                                class="fas fa-exclamation-triangle"></i></div>
+                        <div class="stat-info">
+                            <h5 class="stat-title text-danger">Escalated</h5>
+                            <h2 class="stat-value text-danger" id="escalatedComplaintsCiti">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <!-- Resolved -->
+                <div class="col">
+                    <div class="stat-card stat-green fade-in" style="animation-delay: 0.4s;">
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <h5 class="stat-title">Resolved</h5>
+                            <h2 class="stat-value" id="resolvedComplaints">0</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Section -->
+            <div class="row mb-5">
+                <div class="col-12">
+                    <h4 class="fw-bold text-gray-800 mb-3 fade-in">Quick Actions</h4>
+                    <div class="quick-actions-grid fade-in">
+                        <button class="action-btn action-primary" onclick="showPage('complaintRegistration')">
+                            <i class="fas fa-plus-circle fa-2x mb-2"></i>
+                            <span>New Complaint</span>
+                        </button>
+                        <button class="action-btn action-secondary" onclick="showPage('trackComplaint')">
+                            <i class="fas fa-search fa-2x mb-2"></i>
+                            <span>Track Complaint</span>
+                        </button>
+                        <button class="action-btn action-accent" onclick="showPage('feedback')">
+                            <i class="fas fa-star fa-2x mb-2"></i>
+                            <span>Give Feedback</span>
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Complaints Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card dashboard-table-card fade-in">
+                        <div
+                            class="card-header d-flex justify-content-between align-items-center bg-white border-0 pt-4 pb-0">
+                            <h4 class="mb-0 fw-bold text-gray-800">Recent Complaints</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle custom-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Complaint ID</th>
+                                            <th>Title</th>
+                                            <th>Status</th>
+                                            <th>Priority</th>
+                                            <th style="width:140px;">Time Remaining</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="complaintsTable">
+                                        <!-- Complaints will be added here dynamically from app.js, these are placeholders -->
+                                        <tr>
+                                            <td class="fw-semibold text-primary">#CMP001</td>
+                                            <td class="fw-medium">Water leakage in main pipe</td>
+                                            <td><span class="badge status-pending rounded-pill px-3 py-2">pending</span>
+                                            </td>
+                                            <td><span class="badge priority-high rounded-pill px-3 py-2">high</span>
+                                            </td>
+                                            <td class="text-muted"><i class="far fa-calendar-alt me-1"></i>24-Jan-2026
+                                                12:00</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-light text-primary fw-semibold shadow-sm"
+                                                    onclick="viewComplaintDetails('CMP001')">
+                                                    View Details <i class="fas fa-arrow-right ms-1"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-semibold text-primary">#CMP002</td>
+                                            <td class="fw-medium">Street light not working</td>
+                                            <td><span
+                                                    class="badge status-in-progress rounded-pill px-3 py-2">in-progress</span>
+                                            </td>
+                                            <td><span class="badge priority-medium rounded-pill px-3 py-2">medium</span>
+                                            </td>
+                                            <td class="text-muted"><i class="far fa-calendar-alt me-1"></i>25-Jan-2026
+                                                15:30</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-light text-primary fw-semibold shadow-sm"
+                                                    onclick="viewComplaintDetails('CMP002')">
+                                                    View Details <i class="fas fa-arrow-right ms-1"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Complaint Registration Page -->
+        <div id="complaintRegistration" class="page-content" style="display: none;">
+            <div class="row mb-4">
+                <div class="col-12 fade-in">
+                    <h2 class="fw-bold text-gray-800">Register New Complaint</h2>
+                    <p class="text-muted">Please provide detailed information so we can resolve your issue quickly.</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Left Column: Modern Form -->
+                <div class="col-lg-8">
+                    <div class="modern-form-card card border-0 bg-white fade-in">
+                        <div class="card-body p-4 p-md-5">
+                            <form id="complaintForm">
+                                <!-- Section 1: Complaint Details -->
+                                <h5 class="fw-bold text-primary mb-4 border-bottom pb-2">1. Complaint Details</h5>
+
+                                <div class="mb-4">
+                                    <label for="complaintCategory" class="form-label fw-semibold text-gray-700">Category
+                                        <span class="text-danger">*</span></label>
+                                    <select class="form-select form-select-lg rounded-3 border-light-subtle bg-light"
+                                        id="complaintCategory" required>
+                                        <option value="" disabled selected>Select Category</option>
+                                        <option value="water">Water Supply</option>
+                                        <option value="electricity">Electricity</option>
+                                        <option value="roads">Roads</option>
+                                        <option value="sanitation">Sanitation</option>
+                                        <option value="garbage">Garbage Collection</option>
+                                        <option value="streetlights">Street Lights</option>
+                                        <option value="drainage">Drainage</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="complaintTitle" class="form-label fw-semibold text-gray-700">Title /
+                                        Subject <span class="text-danger">*</span></label>
+                                    <input type="text"
+                                        class="form-control form-control-lg rounded-3 border-light-subtle bg-light"
+                                        id="complaintTitle" placeholder="E.g., Broken street light at Main Avenue"
+                                        required>
+                                </div>
+
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between align-items-end mb-2">
+                                        <label for="complaintDescription"
+                                            class="form-label fw-semibold text-gray-700 mb-0">Detailed Description <span
+                                                class="text-danger">*</span></label>
+                                        <small class="text-muted fw-medium"><span id="charCount">0</span>/500
+                                            chars</small>
+                                    </div>
+                                    <textarea
+                                        class="form-control form-control-lg rounded-3 border-light-subtle bg-light"
+                                        id="complaintDescription" rows="5"
+                                        placeholder="Example: There is a severe water leakage near the main road junction causing heavy traffic delays."
+                                        maxlength="500" required></textarea>
+                                </div>
+
+                                <!-- Section 4: Auto Priority -->
+                                <div class="mb-5 p-4 rounded-4 bg-light border transition-all"
+                                    id="autoPriorityContainer" style="display: flex; align-items: center;">
+                                    <div class="me-auto">
+                                        <h6 class="mb-1 fw-bold text-gray-800">Priority Classification</h6>
+                                        <small class="text-muted fst-italic" id="priorityPlaceholderText">Start typing
+                                            description to auto-detect priority level...</small>
+                                    </div>
+                                    <div id="priorityBadgeDisplay"
+                                        style="display: none; align-items: center; gap: 10px;">
+                                        <span class="text-muted fw-medium small">Detected:</span>
+                                        <span id="priorityBadge"
+                                            class="badge rounded-pill px-4 py-2 fs-6 shadow-sm border border-white"></span>
+                                    </div>
+                                    <input type="hidden" id="complaintPriority" value="Pending">
+                                </div>
+
+                                <!-- Section 2: Location -->
+                                <h5 class="fw-bold text-primary mb-4 border-bottom pb-2 mt-5">2. Location Details</h5>
+                                <div class="row mb-4">
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <label for="complaintDistrict"
+                                            class="form-label fw-semibold text-gray-700">District <span
+                                                class="text-danger">*</span></label>
+                                        <select
+                                            class="form-select form-select-lg rounded-3 border-light-subtle bg-light"
+                                            id="complaintDistrict" required>
+                                            <option value="" disabled selected>Select District</option>
+                                            <!-- Districts populated by JS -->
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="complaintArea" class="form-label fw-semibold text-gray-700">Area /
+                                            Locality <span class="text-danger">*</span></label>
+                                        <input type="text"
+                                            class="form-control form-control-lg rounded-3 border-light-subtle bg-light"
+                                            id="complaintArea" placeholder="E.g., Anna Nagar East" required>
+                                    </div>
+                                </div>
+
+                                <!-- Section 3: Evidence -->
+                                <h5 class="fw-bold text-primary mb-4 border-bottom pb-2">3. Supporting Evidence <span
+                                        class="text-muted fw-normal">(Optional)</span></h5>
+                                <div class="mb-5">
+                                    <div class="file-drop-area rounded-4 text-center p-5 position-relative"
+                                        id="dropZoneContainer">
+                                        <div class="drop-zone-content transition-all" id="dropZoneText">
+                                            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3 opacity-75"></i>
+                                            <h5 class="fw-bold text-gray-800 mb-1">Drag & Drop files here</h5>
+                                            <p class="text-muted mb-4 small">or click to browse from your device</p>
+                                            <button type="button"
+                                                class="btn btn-light border rounded-pill px-4 fw-medium text-primary shadow-sm"
+                                                onclick="document.getElementById('complaintFiles').click()">Browse
+                                                Files</button>
+                                        </div>
+                                        <input type="file" id="complaintFiles"
+                                            class="position-absolute top-0 start-0 w-100 h-100 opacity-0"
+                                            style="cursor: pointer;" multiple accept="image/*,video/*">
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+                                        <small class="text-muted"><i class="fas fa-info-circle me-1"></i>Images or
+                                            videos up to 10MB each.</small>
+                                        <span class="badge bg-secondary rounded-pill" id="fileCountBadge">0 / 5
+                                            Files</span>
+                                    </div>
+
+                                    <!-- Dynamic File Previews -->
+                                    <div id="filePreviewContainer" class="d-flex flex-wrap gap-3 mt-3"></div>
+                                </div>
+
+                                <div class="d-grid mt-4 pt-2">
+                                    <button type="submit"
+                                        class="btn btn-primary btn-lg rounded-pill btn-gradient-submit fw-bold py-3 text-white">
+                                        <i class="fas fa-paper-plane me-2"></i> Submit Complaint
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Enhanced Guide Panel -->
+                <div class="col-lg-4">
+                    <div class="guide-panel card border-0 fade-in h-100" style="animation-delay: 0.2s;">
+                        <div class="card-header bg-transparent border-0 pt-4 pb-2 px-4">
+                            <h5 class="fw-bold text-gray-800 mb-0 d-flex align-items-center">
+                                <span
+                                    class="bg-primary text-white rounded-circle d-inline-flex justify-content-center align-items-center me-3"
+                                    style="width:36px; height:36px;"><i class="fas fa-lightbulb"></i></span>
+                                Complaint Guide
+                            </h5>
+                        </div>
+                        <div class="card-body px-4 pb-4 pt-3">
+                            <h6 class="fw-bold text-primary mt-2 mb-3 text-uppercase small tracking-wide">Helpful Tips
+                            </h6>
+                            <ul class="list-unstyled text-muted border-bottom pb-4 mb-4">
+                                <li class="mb-3 d-flex align-items-start">
+                                    <i class="fas fa-check-circle text-success mt-1 me-3 fs-5"></i>
+                                    <span class="small lh-base fw-medium text-gray-700">Provide accurate location
+                                        details so authorities can quickly identify the issue area.</span>
+                                </li>
+                                <li class="mb-3 d-flex align-items-start">
+                                    <i class="fas fa-check-circle text-success mt-1 me-3 fs-5"></i>
+                                    <span class="small lh-base fw-medium text-gray-700">Describe the issue clearly and
+                                        explicitly mention any immediate hazards.</span>
+                                </li>
+                                <li class="mb-1 d-flex align-items-start">
+                                    <i class="fas fa-check-circle text-success mt-1 me-3 fs-5"></i>
+                                    <span class="small lh-base fw-medium text-gray-700">Upload supporting evidence like
+                                        photos or videos to guarantee faster resolution.</span>
+                                </li>
+                            </ul>
+
+                            <h6 class="fw-bold text-primary mb-3 text-uppercase small tracking-wide">Auto-Priority
+                                System</h6>
+                            <p class="text-muted small mb-4 lh-base">Our smart system analyzes your description to
+                                classify urgency. Examples of how it ranks:</p>
+                            <ul class="list-unstyled">
+                                <li
+                                    class="mb-3 d-flex align-items-center p-3 rounded-3 bg-white border border-light shadow-sm">
+                                    <span
+                                        class="badge bg-danger rounded-pill px-3 py-2 me-3 shadow-sm border border-white"
+                                        style="min-width: 85px;">High</span>
+                                    <small class="text-gray-700 fw-semibold">Electricity failure, emergencies,
+                                        flooding</small>
+                                </li>
+                                <li
+                                    class="mb-3 d-flex align-items-center p-3 rounded-3 bg-white border border-light shadow-sm">
+                                    <span
+                                        class="badge bg-warning rounded-pill px-3 py-2 text-dark me-3 shadow-sm border border-white"
+                                        style="min-width: 85px;">Medium</span>
+                                    <small class="text-gray-700 fw-semibold">Street light outage, road damage, drainage
+                                        drops</small>
+                                </li>
+                                <li
+                                    class="mb-1 d-flex align-items-center p-3 rounded-3 bg-white border border-light shadow-sm">
+                                    <span
+                                        class="badge bg-success rounded-pill px-3 py-2 me-3 shadow-sm border border-white"
+                                        style="min-width: 85px;">Low</span>
+                                    <small class="text-gray-700 fw-semibold">Garbage pile-up, minor park
+                                        maintenance</small>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Track Complaint Page -->
+        <div id="trackComplaintPage" class="page-content" style="display: none; min-height: 80vh;">
+            <div class="row justify-content-center mb-5 mt-3">
+                <div class="col-md-10 col-lg-8 col-xl-7 fade-in">
+                    <div class="card shadow-sm border-0 rounded-4">
+                        <div class="card-body p-4 text-center">
+                            <h3 class="fw-bold mb-3">Track Your Complaint</h3>
+                            <p class="text-muted mb-4">Enter your Complaint ID to view its real-time status and
+                                escalation timeline.</p>
+                            <form onsubmit="handleTrackComplaint(event)">
+                                <div class="input-group input-group-lg mb-3 shadow-sm rounded-pill overflow-hidden">
+                                    <input type="text" class="form-control border-0 px-4 bg-light fw-bold"
+                                        style="font-size: 1.1rem; letter-spacing: 1px;" id="trackComplaintId"
+                                        placeholder="Enter Complaint ID (e.g. CMP...) " required>
+                                    <button class="btn btn-primary px-5 fw-bold text-uppercase"
+                                        style="letter-spacing: 1px;" type="submit">
+                                        <i class="fas fa-search me-2"></i> Track
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Escalation Process Visual Info -->
+            <div class="row justify-content-center mb-4 fade-in" id="escalationInfoProcess">
+                <div class="col-md-10 col-lg-8">
+                    <div class="card shadow-sm border-0 rounded-4 bg-white">
+                        <div class="card-body p-4 p-md-5">
+                            <h4 class="fw-bold text-center mb-5 text-gray-800">Our Automated Escalation Timeline</h4>
+                            <div class="position-relative">
+                                <!-- Horizontal Timeline Line -->
+                                <div class="d-none d-md-block position-absolute bg-light"
+                                    style="height: 4px; width: 75%; top: 40px; left: 12.5%; z-index: 0;"></div>
+
+                                <div class="row text-center position-relative z-1 g-4">
+                                    <!-- Step 1: Ward Officer -->
+                                    <div class="col-md-3">
+                                        <div class="bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center mx-auto mb-3"
+                                            style="width: 80px; height: 80px; border: 4px solid #16a34a;">
+                                            <i class="fas fa-map-marker-alt fa-2x text-success"></i>
+                                        </div>
+                                        <h5 class="fw-bold text-gray-800 mb-1">Ward Officer</h5>
+                                        <p class="small text-muted mb-2 text-uppercase fw-semibold"
+                                            style="letter-spacing: 0.5px;">Level 1</p>
+                                        <span
+                                            class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-3 py-2 rounded-pill shadow-sm">5
+                                            Min SLA</span>
+                                    </div>
+
+                                    <!-- Step 2: Municipality -->
+                                    <div class="col-md-3">
+                                        <div class="bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center mx-auto mb-3"
+                                            style="width: 80px; height: 80px; border: 4px solid #f59e0b;">
+                                            <i class="fas fa-city fa-2x text-warning"></i>
+                                        </div>
+                                        <h5 class="fw-bold text-gray-800 mb-1">Municipality</h5>
+                                        <p class="small text-muted mb-2 text-uppercase fw-semibold"
+                                            style="letter-spacing: 0.5px;">Level 2</p>
+                                        <span
+                                            class="badge bg-warning bg-opacity-10 text-dark border border-warning-subtle px-3 py-2 rounded-pill shadow-sm">5
+                                            Min SLA</span>
+                                    </div>
+
+                                    <!-- Step 3: District -->
+                                    <div class="col-md-3">
+                                        <div class="bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center mx-auto mb-3"
+                                            style="width: 80px; height: 80px; border: 4px solid #ea580c;">
+                                            <i class="fas fa-landmark fa-2x" style="color: #ea580c;"></i>
+                                        </div>
+                                        <h5 class="fw-bold text-gray-800 mb-1">District</h5>
+                                        <p class="small text-muted mb-2 text-uppercase fw-semibold"
+                                            style="letter-spacing: 0.5px;">Level 3</p>
+                                        <span class="badge px-3 py-2 rounded-pill shadow-sm"
+                                            style="background-color: #fff7ed; color: #ea580c; border: 1px solid #ea580c;">5
+                                            Min SLA</span>
+                                    </div>
+
+                                    <!-- Step 4: State -->
+                                    <div class="col-md-3">
+                                        <div class="bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center mx-auto mb-3"
+                                            style="width: 80px; height: 80px; border: 4px solid #dc2626;">
+                                            <i class="fas fa-gavel fa-2x text-danger"></i>
+                                        </div>
+                                        <h5 class="fw-bold text-gray-800 mb-1">State Authority</h5>
+                                        <p class="small text-muted mb-2 text-uppercase fw-semibold"
+                                            style="letter-spacing: 0.5px;">Level 4 — Final</p>
+                                        <span
+                                            class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-3 py-2 rounded-pill shadow-sm">Must
+                                            Resolve</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-12 col-xl-11">
+                    <!-- Tracking Results Container -->
+                    <div id="trackResult" class="tracking-results fade-in mt-2" style="display: none;">
+                        <!-- JS injects the timeline and escalation details here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedback Page -->
+        <div id="feedbackPage" class="page-content" style="display: none; min-height: 80vh;">
+            <div class="row mb-4 mt-2">
+                <div class="col-12 fade-in text-center">
+                    <h2 class="fw-bold text-gray-800">Submit Official Feedback</h2>
+                    <p class="text-muted">Please fill in all details manually to track your service request resolution.
+                    </p>
+                </div>
+            </div>
+
+            <div class="row justify-content-center pb-5">
+                <div class="col-md-10 col-lg-8">
+                    <div class="card border-0 shadow rounded-4 fade-in overflow-hidden">
+                        <div class="card-header bg-primary text-white p-4 border-0">
+                            <h5 class="mb-0 fw-bold d-flex align-items-center">
+                                <i class="fas fa-edit me-2"></i> Feedback Details
+                            </h5>
+                        </div>
+                        <div class="card-body p-4 p-md-5 bg-white">
+                            <form id="feedbackForm">
+                                <div class="row g-4">
+                                    <!-- Complaint ID & Date -->
+                                    <div class="col-md-6">
+                                        <label for="feedbackComplaintId"
+                                            class="form-label fw-semibold text-gray-700">Complaint ID <span
+                                                class="text-danger">*</span></label>
+                                        <div class="input-group shadow-sm rounded-3 overflow-hidden">
+                                            <span class="input-group-text bg-light border-0"><i
+                                                    class="fas fa-hashtag text-primary"></i></span>
+                                            <input type="text"
+                                                class="form-control form-control-lg bg-light border-0 px-3"
+                                                id="feedbackComplaintId" placeholder="e.g. CMP1001" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="feedbackDateInput"
+                                            class="form-label fw-semibold text-gray-700">Feedback Date <span
+                                                class="text-danger">*</span></label>
+                                        <div class="input-group shadow-sm rounded-3 overflow-hidden">
+                                            <span class="input-group-text bg-light border-0"><i
+                                                    class="fas fa-calendar-alt text-primary"></i></span>
+                                            <input type="date"
+                                                class="form-control form-control-lg bg-light border-0 px-3"
+                                                id="feedbackDateInput" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Citizen Name & Category -->
+                                    <div class="col-md-6">
+                                        <label for="feedbackCitizenName"
+                                            class="form-label fw-semibold text-gray-700">Citizen Name <span
+                                                class="text-danger">*</span></label>
+                                        <div class="input-group shadow-sm rounded-3 overflow-hidden">
+                                            <span class="input-group-text bg-light border-0"><i
+                                                    class="fas fa-user text-primary"></i></span>
+                                            <input type="text"
+                                                class="form-control form-control-lg bg-light border-0 px-3"
+                                                id="feedbackCitizenName" placeholder="Your Full Name" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="feedbackCategory"
+                                            class="form-label fw-semibold text-gray-700">Category <span
+                                                class="text-danger">*</span></label>
+                                        <div class="input-group shadow-sm rounded-3 overflow-hidden">
+                                            <span class="input-group-text bg-light border-0"><i
+                                                    class="fas fa-list text-primary"></i></span>
+                                            <select class="form-select form-select-lg bg-light border-0 px-3"
+                                                id="feedbackCategory" required>
+                                                <option value="" disabled selected>Select Category</option>
+                                                <option value="Water Supply">Water Supply</option>
+                                                <option value="Electricity">Electricity</option>
+                                                <option value="Roads">Roads</option>
+                                                <option value="Sanitation">Sanitation</option>
+                                                <option value="Garbage Collection">Garbage Collection</option>
+                                                <option value="Street Lights">Street Lights</option>
+                                                <option value="Drainage">Drainage</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- Rating -->
+                                    <div
+                                        class="col-12 mt-4 text-center p-4 bg-light rounded-4 border border-light-subtle shadow-sm">
+                                        <h6 class="fw-bold mb-3 text-gray-800 text-uppercase tracking-wide small">Rate
+                                            Your Experience</h6>
+                                        <div class="rating-stars mx-auto"
+                                            style="font-size: 2.5rem; color: #cbd5e1; cursor: pointer; display: inline-flex; gap: 10px;">
+                                            <i class="fas fa-star" data-val="1" style="color: #cbd5e1;"></i>
+                                            <i class="fas fa-star" data-val="2" style="color: #cbd5e1;"></i>
+                                            <i class="fas fa-star" data-val="3" style="color: #cbd5e1;"></i>
+                                            <i class="fas fa-star" data-val="4" style="color: #cbd5e1;"></i>
+                                            <i class="fas fa-star" data-val="5" style="color: #cbd5e1;"></i>
+                                        </div>
+                                        <input type="hidden" id="feedbackRating" value="0">
+                                    </div>
+
+                                    <!-- Comments -->
+                                    <div class="col-12 mt-4">
+                                        <label for="feedbackComments"
+                                            class="form-label fw-semibold text-gray-700">Detailed Feedback <span
+                                                class="text-danger">*</span></label>
+                                        <textarea
+                                            class="form-control form-control-lg bg-light border-0 shadow-sm rounded-4 p-4"
+                                            id="feedbackComments" rows="4"
+                                            placeholder="Tell us about your experience..." style="resize: none;"
+                                            required></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="mt-5 text-center">
+                                    <button type="submit"
+                                        class="btn btn-primary btn-lg rounded-pill px-5 py-3 fw-bold shadow hover-transform d-inline-flex align-items-center tracking-wide text-uppercase"
+                                        style="font-size: 1rem;">
+                                        <i class="fas fa-paper-plane me-2"></i> Submit Response
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Authority Dashboard -->
+        <div id="authorityDashboard" class="page-content" style="display: none;">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4">Authority Dashboard</h2>
+                </div>
+            </div>
+            <div class="row row-cols-1 row-cols-md-3 row-cols-lg-5 g-3 mb-4">
+                <div class="col">
+                    <div class="card text-center h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body">
+                            <h6 class="card-title text-muted fw-bold text-uppercase small">Total</h6>
+                            <h2 class="text-primary fw-bold mb-0" id="authTotalComplaints">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card text-center h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body">
+                            <h6 class="card-title text-muted fw-bold text-uppercase small">Pending</h6>
+                            <h2 class="text-warning fw-bold mb-0" id="authPendingComplaints">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card text-center h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body">
+                            <h6 class="card-title text-muted fw-bold text-uppercase small">In Progress</h6>
+                            <h2 class="text-info fw-bold mb-0" id="authInProgressComplaints">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div
+                        class="card text-center h-100 border-0 shadow-sm rounded-4 bg-danger bg-opacity-10 border-danger">
+                        <div class="card-body">
+                            <h6 class="card-title text-danger fw-bold text-uppercase small flex-grow-1"><i
+                                    class="fas fa-fire me-1"></i>Escalated</h6>
+                            <h2 class="text-danger fw-bold mb-0" id="authEscalatedComplaints">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card text-center h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body">
+                            <h6 class="card-title text-muted fw-bold text-uppercase small">Resolved</h6>
+                            <h2 class="text-success fw-bold mb-0" id="authResolvedComplaints">0</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+                        <h4 class="fw-bold text-gray-800 m-0">Assigned Petitions Feed</h4>
+                        <div class="d-flex gap-2">
+                            <input type="text" class="form-control rounded-pill shadow-sm bg-white border-light px-4"
+                                placeholder="Search ID or Title...">
+                            <select class="form-select rounded-pill shadow-sm bg-white border-light w-auto">
+                                <option value="all">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="escalated">Escalated</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Modern Card Grid for Assigned Complaints -->
+                    <div class="row g-4" id="authComplaintsGrid">
+                        <!-- Cards dynamically injected by app.js -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Petition Details Modal for Authority Actions -->
+        <div class="modal fade" id="petitionModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow-lg rounded-4">
+                    <div class="modal-header bg-primary text-white border-0 py-3">
+                        <h5 class="modal-title fw-bold m-0 d-flex align-items-center">
+                            <i class="fas fa-file-signature me-2"></i> Petition Review <span id="modalComplaintId"
+                                class="badge bg-white text-primary ms-3 rounded-pill"></span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4 bg-light">
+                        <div class="row g-4">
+                            <!-- Left Column: Complaint Details -->
+                            <div class="col-lg-7">
+                                <div class="bg-white p-4 rounded-4 shadow-sm border border-light h-100">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h4 class="fw-bold text-gray-800 m-0" id="modalComplaintTitle">Title...</h4>
+                                        <span id="modalComplaintPriority"
+                                            class="badge text-uppercase px-3 py-2 rounded-pill shadow-sm mt-1"></span>
+                                    </div>
+                                    <div class="d-flex gap-3 mb-4 text-muted small">
+                                        <span><i class="fas fa-folder-open me-1"></i> <span
+                                                id="modalComplaintCategory"></span></span>
+                                        <span><i class="fas fa-clock me-1"></i> <span
+                                                id="modalComplaintDate"></span></span>
+                                    </div>
+
+                                    <h6 class="fw-bold text-uppercase small text-muted mb-2 tracking-wide">Description
+                                    </h6>
+                                    <div class="bg-light p-3 rounded-3 mb-4 border border-light-subtle text-gray-700"
+                                        id="modalComplaintDesc" style="font-size: 0.95rem; line-height: 1.6;"></div>
+
+                                    <h6 class="fw-bold text-uppercase small text-muted mb-3 tracking-wide mt-4">SLA
+                                        Deadline Tracker</h6>
+                                    <div class="d-flex align-items-center mb-4 p-3 rounded-3 border bg-white shadow-sm">
+                                        <div class="me-auto" id="modalSlaStatusContainer"></div>
+                                        <div class="text-end ms-3">
+                                            <small class="text-muted d-block fw-semibold text-uppercase">Deadline
+                                                Date</small>
+                                            <span class="fw-bold text-dark" id="modalSlaDate"></span>
+                                        </div>
+                                    </div>
+
+                                    <h6 class="fw-bold text-uppercase small text-muted mb-3 tracking-wide mt-4">Officer
+                                        Notes & Logs</h6>
+                                    <div class="border rounded-4 overflow-hidden mb-4 bg-white shadow-sm border-light">
+                                        <div id="modalNotesList" class="p-3"
+                                            style="max-height: 250px; overflow-y: auto; background-color: #f8f9fa;">
+                                            <!-- Notes injected here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column: Timeline & Actions -->
+                            <div class="col-lg-5">
+                                <div class="bg-white p-4 rounded-4 shadow-sm border border-light mb-4 text-center">
+                                    <h6 class="fw-bold text-uppercase small text-muted mb-3 tracking-wide">Authority
+                                        Action Panel</h6>
+
+                                    <div class="mb-3 text-start">
+                                        <textarea class="form-control rounded-3 border-light bg-light"
+                                            id="officerNoteInput" rows="2"
+                                            placeholder="Write internal note to attach before action..."></textarea>
+                                    </div>
+
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-primary fw-bold"
+                                            onclick="handleAuthorityAction('note')" id="btnActionNote">
+                                            <i class="fas fa-comment-dots me-2"></i> Add Officer Note
+                                        </button>
+                                        <div class="d-flex gap-2 mt-2">
+                                            <button class="btn btn-success fw-bold flex-grow-1"
+                                                onclick="handleAuthorityAction('resolve')" id="btnActionResolve">
+                                                <i class="fas fa-check-circle me-2"></i> Resolve Issue
+                                            </button>
+                                            <button class="btn btn-warning text-dark fw-bold flex-grow-1"
+                                                onclick="handleAuthorityAction('escalate')" id="btnActionEscalate">
+                                                <i class="fas fa-level-up-alt me-2"></i> Escalate Link
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white p-4 rounded-4 shadow-sm border border-light h-100 mb-0">
+                                    <h6 class="fw-bold text-uppercase small text-muted mb-3 tracking-wide">Complaint
+                                        Timeline</h6>
+                                    <div id="modalTimeline" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="adminDashboard" class="page-content" style="display: none;">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4">Admin Dashboard</h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Users</h5>
+                            <h2 class="text-primary" id="totalUsers">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Complaints</h5>
+                            <h2 class="text-info" id="adminTotalComplaints">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Escalated</h5>
+                            <h2 class="text-warning" id="escalatedComplaints">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">SLA Breach</h5>
+                            <h2 class="text-danger" id="slaBreachComplaints">0</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">User Management</h5>
+                            <button class="btn btn-primary btn-sm" onclick="showUserModal()">
+                                <i class="fas fa-plus me-1"></i>Add User
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Role</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="usersTable">
+                                        <!-- Users will be added here dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">System Configuration</h5>
+                            <button class="btn btn-primary btn-sm" onclick="showConfigModal()">
+                                <i class="fas fa-cog me-1"></i>Settings
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">SLA Settings</label>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label class="form-label small">High Priority (hours)</label>
+                                        <input type="number" class="form-control" id="highPrioritySLA" value="24">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small">Medium Priority (hours)</label>
+                                        <input type="number" class="form-control" id="mediumPrioritySLA" value="48">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small">Low Priority (hours)</label>
+                                        <input type="number" class="form-control" id="lowPrioritySLA" value="72">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Escalation Rules</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="autoEscalation" checked>
+                                    <label class="form-check-label" for="autoEscalation">
+                                        Enable automatic escalation
+                                    </label>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onclick="saveConfiguration()">Save Configuration</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Profile Page -->
+        <div id="profilePage" class="page-content" style="display: none;">
+            <div class="row mb-4">
+                <div class="col-12 fade-in">
+                    <h2 class="fw-bold text-gray-800">My Profile</h2>
+                    <p class="text-muted">Manage your personal information and account settings.</p>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-4 text-center p-4 mb-4 fade-in">
+                        <div class="mb-3">
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                                <i class="fas fa-user fa-4x text-primary"></i>
+                            </div>
+                        </div>
+                        <h4 class="fw-bold mb-1" id="profileNameDisplay">User Name</h4>
+                        <p class="text-muted mb-3" id="profileEmailDisplay">user@example.com</p>
+                        <span id="profileRoleBadge" class="badge bg-primary rounded-pill px-3 py-2">CITIZEN</span>
+                    </div>
+                </div>
+
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 fade-in">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-bold mb-0">Personal Information</h5>
+                            <button id="profileEditBtn" class="btn btn-outline-primary rounded-pill px-4 btn-sm" onclick="toggleProfileEdit()">
+                                <i class="fas fa-edit me-2"></i>Edit Profile
+                            </button>
+                        </div>
+
+                        <div id="profileDisplayView">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="small text-muted fw-bold text-uppercase">Full Name</label>
+                                    <p class="fw-medium border-bottom pb-2" id="profileName">-</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small text-muted fw-bold text-uppercase">Email Address</label>
+                                    <p class="fw-medium border-bottom pb-2" id="profileEmail">-</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small text-muted fw-bold text-uppercase">Aadhar Number</label>
+                                    <p class="fw-medium border-bottom pb-2" id="profileAadhar">-</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small text-muted fw-bold text-uppercase">Mobile Number</label>
+                                    <p class="fw-medium border-bottom pb-2" id="profileMobile">-</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="profileEditView" style="display: none;">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Full Name</label>
+                                    <input type="text" class="form-control rounded-3" id="editName">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Mobile Number</label>
+                                    <input type="text" class="form-control rounded-3" id="editMobile">
+                                </div>
+                                <div class="col-md-12 text-end mt-4">
+                                    <button class="btn btn-light rounded-pill px-4 me-2" onclick="toggleProfileEdit()">Cancel</button>
+                                    <button class="btn btn-primary rounded-pill px-4" onclick="saveProfileChanges()">Save Changes</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Chatbot Widget -->
+    <div id="chatbotWidget" class="chatbot-widget">
+        <div class="chatbot-header" onclick="toggleChatbot()">
+            <i class="fas fa-robot me-2"></i>
+            <span>Assistant</span>
+            <i class="fas fa-chevron-up ms-auto" id="chatbotToggle"></i>
+        </div>
+        <div class="chatbot-body" id="chatbotBody" style="display: none;">
+            <div class="chatbot-messages" id="chatbotMessages">
+                <div class="message bot-message">
+                    Hello! I'm here to help you with the complaint management system. How can I assist you today?
+                </div>
+            </div>
+            <div class="chatbot-input">
+                <input type="text" class="form-control" id="chatbotInput" placeholder="Type your message...">
+                <button class="btn btn-primary" onclick="sendChatbotMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="/js/app.js"></script>
+    <script src="/google-auth.js"></script>
+    <script src="/js/theme.js"></script>
+
+    <script>
+        // Complete Authentication System
+        document.addEventListener('DOMContentLoaded', function () {
+            // Define showToast as an alias to showNotification in app.js
+            window.showToast = function (message, type) {
+                if (typeof showNotification === 'function') {
+                    showNotification(message, type);
+                } else {
+                    console.warn('showNotification not defined. Message:', message);
+                }
+            };
+
+            const userRoleSelect = document.getElementById('userRole');
+            const authorityLevelRow = document.getElementById('authorityLevelRow');
+            const authorityLevelSelect = document.getElementById('authorityLevel');
+            const registerForm = document.getElementById('registerForm');
+            const loginForm = document.getElementById('loginForm');
+
+            // Toast notification system
+            function showToast(message, type = 'success') {
+                const toast = document.createElement('div');
+                toast.className = `alert alert-${type === 'error' ? 'danger' : 'success'} position-fixed`;
+                toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; animation: slideIn 0.3s ease;';
+                toast.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'} me-2"></i>
+                        ${message}
+                    </div>
+                `;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            // Handle role change for registration
+            userRoleSelect.addEventListener('change', function () {
+                const selectedRole = this.value;
+
+                if (selectedRole === 'authority') {
+                    authorityLevelRow.style.display = 'flex';
+                    authorityLevelRow.style.opacity = '0';
+                    authorityLevelRow.style.transform = 'translateY(-10px)';
+
+                    setTimeout(() => {
+                        authorityLevelRow.style.transition = 'all 0.3s ease';
+                        authorityLevelRow.style.opacity = '1';
+                        authorityLevelRow.style.transform = 'translateY(0)';
+                    }, 10);
+                    authorityLevelSelect.setAttribute('required', 'required');
+                } else {
+                    authorityLevelRow.style.transition = 'all 0.3s ease';
+                    authorityLevelRow.style.opacity = '0';
+                    authorityLevelRow.style.transform = 'translateY(-10px)';
+
+                    setTimeout(() => {
+                        authorityLevelRow.style.display = 'none';
+                    }, 300);
+
+                    authorityLevelSelect.removeAttribute('required');
+                    authorityLevelSelect.value = '';
+                    authorityLevelSelect.classList.remove('is-invalid');
+                }
+            });
+
+            // Registration form submission (Commented out to prevent conflict with app.js)
+            /*
+            registerForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const firstName = document.getElementById('firstName').value.trim();
+                const lastName = document.getElementById('lastName').value.trim();
+                const email = document.getElementById('registerEmail').value.trim();
+                const password = document.getElementById('registerPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const role = userRoleSelect.value;
+                const authorityLevel = authorityLevelSelect.value;
+
+                // Validation
+                if (!firstName || !lastName || !email || !password || !confirmPassword || !role) {
+                    showToast('Please fill all required fields', 'error');
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showToast('Passwords do not match', 'error');
+                    return;
+                }
+
+                if (role === 'authority' && !authorityLevel) {
+                    showToast('Please select authority level', 'error');
+                    authorityLevelSelect.classList.add('is-invalid');
+                    return;
+                }
+
+                // Check for duplicate users
+                const users = JSON.parse(localStorage.getItem("users")) || [];
+                if (users.some(u => u.email === email)) {
+                    showToast('User with this email already exists', 'error');
+                    return;
+                }
+
+                // Create new user
+                const newUser = {
+                    name: firstName + ' ' + lastName,
+                    email: email,
+                    password: password,
+                    role: role,
+                    authority_level: role === 'authority' ? authorityLevel : null
+                };
+
+                users.push(newUser);
+                localStorage.setItem("users", JSON.stringify(users));
+
+                showToast('Account created successfully! Please login.', 'success');
+                registerForm.reset();
+                authorityLevelRow.style.display = 'none';
+                showPage('login');
+            });
+            */
+
+            // Clear validation on input
+            authorityLevelSelect.addEventListener('change', function () {
+                if (this.value) {
+                    this.classList.remove('is-invalid');
+                }
+            });
+
+            // Phone: allow only digits, max 10
+            const phoneInput = document.getElementById('phone');
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function () {
+                    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+                });
+            }
+
+            // Login form submission (Commented out to prevent conflict with app.js)
+            /*
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                loginUser();
+            });
+            */
+        });
+
+        // Login function
+        function loginUser() {
+            const email = document.getElementById("loginEmail").value.trim();
+            const password = document.getElementById("loginPassword").value.trim();
+            const submitBtn = document.querySelector('#loginForm button[type="submit"]');
+
+            // Validation
+            if (!email || !password) {
+                showToast('Please enter email and password', 'error');
+                return;
+            }
+
+            // Show loading state
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing In...';
+            }
+
+            // Get users from localStorage
+            const users = JSON.parse(localStorage.getItem("users")) || [];
+            const user = users.find(u => u.email === email && u.password === password);
+
+            setTimeout(() => {
+                if (!user) {
+                    showToast('Invalid email or password', 'error');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Sign In';
+                    }
+                    return;
+                }
+
+                // Save session
+                localStorage.setItem("currentUser", JSON.stringify(user));
+                showToast('Login successful!', 'success');
+
+                // Role-based redirect
+                if (user.role === "citizen") {
+                    window.location.href = "/";
+                } else if (user.role === "admin") {
+                    localStorage.setItem('civix_page', 'admin-dashboard');
+                    window.location.href = "/";
+                } else if (user.role === "authority") {
+                    if (!user.authority_level) {
+                        showToast('Authority level not set', 'error');
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Sign In';
+                        }
+                        return;
+                    }
+
+                    switch (user.authority_level) {
+                        case "ward":
+                            localStorage.setItem('civix_page', 'ward-dashboard');
+                            window.location.href = "/";
+                            break;
+                        case "municipality":
+                            localStorage.setItem('civix_page', 'municipality-dashboard');
+                            window.location.href = "/";
+                            break;
+                        case "district":
+                            localStorage.setItem('civix_page', 'district-dashboard');
+                            window.location.href = "/";
+                            break;
+                        case "state":
+                            localStorage.setItem('civix_page', 'state-dashboard');
+                            window.location.href = "/";
+                            break;
+                        default:
+                            showToast('Invalid authority level', 'error');
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Sign In';
+                            }
+                    }
+                }
+            }, 1000);
+        }
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+    <script>
+function handleCredentialResponse(response) {
+    console.log("✅ Google callback working");
+    alert("Login success");
+}
+</script>
+</body>
+
+</html>
