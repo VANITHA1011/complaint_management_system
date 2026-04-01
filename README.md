@@ -27,7 +27,7 @@ The system ensures:
 - Central **“Track Your Complaint”** feature improves usability  
 - Real-time tracking input gives instant access to complaint status  
 - Smooth layout with proper spacing and alignment  
-- Professional navbar with clear navigation (Home, Dashboard, Profile)  
+- Professional navbar with clear navigation  
 - Assistant feature adds smart interaction support  
 
 ---
@@ -65,7 +65,7 @@ The system ensures:
 #### 🔍 Analysis
 
 - Displays complaint statistics clearly  
-- Color-based status indicators (Pending, Resolved, Escalated)  
+- Color-based status indicators  
 - Quick actions improve user experience  
 - Clean card-based UI design  
 
@@ -79,7 +79,7 @@ The system ensures:
 
 - Handles complaints at local level  
 - SLA timers ensure quick response  
-- Easy complaint viewing and action system  
+- Easy complaint management system  
 
 ---
 
@@ -156,7 +156,10 @@ The system ensures:
 ---
 
 ### 🧭 Escalation Hierarchy (Core Concept)
-![Hierarchy](https://raw.githubusercontent.com/VANITHA1011/complaint_management_system/main/images/hierarchylevel.png)#### 🔍 Analysis
+
+![Hierarchy](https://raw.githubusercontent.com/VANITHA1011/complaint_management_system/main/images/hierarchylevel.png)
+
+#### 🔍 Analysis
 
 - Defines complete complaint flow system  
 - Four-level escalation model:
