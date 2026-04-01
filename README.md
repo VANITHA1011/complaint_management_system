@@ -156,8 +156,7 @@ The system ensures:
 ---
 
 ### 🧭 Escalation Hierarchy (Core Concept)
-https://github.com/VANITHA1011/complaint_management_system/blob/main/images/hierachylevel.png#:~:text=feedbackform.png-,hierachylevel,-.png
-#### 🔍 Analysis
+![Hierarchy](https://raw.githubusercontent.com/VANITHA1011/complaint_management_system/main/images/hierarchylevel.png)#### 🔍 Analysis
 
 - Defines complete complaint flow system  
 - Four-level escalation model:
